@@ -60,6 +60,11 @@ type AppTheme = 'pokemon_kalos' | 'one_piece' | 'default';
 
 const POMODORO_WORK_DURATION = 25 * 60; // 25 mins in seconds
 const POMODORO_BREAK_DURATION = 5 * 60; // 5 mins in seconds
+const formatTime = (totalSeconds: number): string => {
+    const mins = Math.floor(totalSeconds / 60);
+    const secs = totalSeconds % 60;
+    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+};
 
 
 const getPokemonImageUrl = (name: string): string => {
@@ -589,9 +594,7 @@ const Dashboard: React.FC<DashboardProps> = ({ dashboardData, onViewLeaderboard,
     let fatigueBarPercent = 0;
     let fatigueBarColor = 'bg-green-500';
     let fatigueBarText = 'Ready to Train!';
-    let timerMins = Math.floor(pomodoroTimeLeft / 60);
-    let timerSecs = pomodoroTimeLeft % 60;
-    const timerDisplay = `${timerMins.toString().padStart(2, '0')}:${timerSecs.toString().padStart(2, '0')}`;
+    const timerDisplay = formatTime(pomodoroTimeLeft);
 
     if (pomodoroStatus === 'active') {
         const energyLeft = pomodoroTimeLeft;
@@ -742,13 +745,7 @@ const QuizSubjectSelectionScreen: React.FC<QuizSubjectSelectionProps> = ({ onSta
     const isBreakTime = pomodoroStatus === 'breaking';
     const isResting = pomodoroStatus === 'resting';
 
-    const timerMins = Math.floor(pomodoroTimeLeft / 60);
-    const timerSecs = pomodoroTimeLeft % 60;
-    const timeDisplay = `${timerMins.toString().padStart(2, '0')}:${timerSecs.toString().padStart(2, '0')}`;
-
-    const timerMins = Math.floor(pomodoroTimeLeft / 60);
-    const timerSecs = pomodoroTimeLeft % 60;
-    const timeDisplay = `${timerMins.toString().padStart(2, '0')}:${timerSecs.toString().padStart(2, '0')}`;
+const timeDisplay = formatTime(pomodoroTimeLeft);
 
     const { theme } = useAuth();
     const isOnePieceTheme = theme === 'one_piece';
