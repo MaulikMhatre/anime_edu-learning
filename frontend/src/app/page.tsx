@@ -1,6 +1,3 @@
-
-
-
 'use client';
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
@@ -56,7 +53,7 @@ interface LeaderboardEntry {
     pokemon_name: string;
 }
 
-type LoggedInScreen = 'dashboard' | 'leaderboard' | 'quiz_select' | 'quiz_battle' | 'feedback';
+type LoggedInScreen = 'dashboard' | 'leaderboard' | 'quiz_select' | 'quiz_battle' | 'feedback' | 'resources' | 'todo_list';
 type Screen = 'landing' | 'login' | 'main';
 type AppTheme = 'pokemon_kalos' | 'one_piece' | 'default';
 
@@ -614,7 +611,6 @@ const Dashboard: React.FC<DashboardProps> = ({ dashboardData, onViewLeaderboard,
     const buttonText = pomodoroStatus === 'active' ? 'Training Active...' : (pomodoroStatus === 'breaking' ? 'Pokémon Resting...' : 'Start Pomodoro Mode');
     const buttonDisabled = pomodoroStatus !== 'resting';
 
-
     return (
         <div className="p-6 md:p-10 bg-slate-900/90 rounded-2xl shadow-2xl w-full max-w-4xl mx-auto border-4 border-blue-600/70 backdrop-blur-md">
             <h1 className="text-3xl font-extrabold text-white mb-6 border-b-2 border-cyan-500 pb-4 drop-shadow-md">Kalos Trainer Dashboard</h1>
@@ -750,6 +746,10 @@ const QuizSubjectSelectionScreen: React.FC<QuizSubjectSelectionProps> = ({ onSta
     const timerSecs = pomodoroTimeLeft % 60;
     const timeDisplay = `${timerMins.toString().padStart(2, '0')}:${timerSecs.toString().padStart(2, '0')}`;
 
+    const timerMins = Math.floor(pomodoroTimeLeft / 60);
+    const timerSecs = pomodoroTimeLeft % 60;
+    const timeDisplay = `${timerMins.toString().padStart(2, '0')}:${timerSecs.toString().padStart(2, '0')}`;
+
     const { theme } = useAuth();
     const isOnePieceTheme = theme === 'one_piece';
 
@@ -801,7 +801,7 @@ const QuizSubjectSelectionScreen: React.FC<QuizSubjectSelectionProps> = ({ onSta
                             onClick={() => onStartQuiz(subject)}
                             disabled={isBreakTime || isResting}
                             className={`flex flex-col items-center justify-center p-4 ${themeColors.bg} text-white font-bold rounded-xl shadow-xl shadow-blue-500/20
-                                             ${themeColors.hover} transition duration-300 transform hover:scale-[1.05] text-center text-lg ring-2 ring-cyan-500/50 relative`}
+                                         ${themeColors.hover} transition duration-300 transform hover:scale-[1.05] text-center text-lg ring-2 ring-cyan-500/50 relative`}
                         >
                             <MonitorPlay className={`w-6 h-6 mb-2 ${isOnePieceTheme ? themeColors.primary : 'text-cyan-300'}`} />
                             {subject} {isOnePieceTheme ? 'Sea' : ''}
@@ -842,7 +842,7 @@ const FeedbackScreen: React.FC<FeedbackProps> = ({ weakTopics, trainerUsername, 
         }
 
         const synth = window.speechSynthesis;
-        synth.cancel();
+        synth.cancel(); 
 
         if (isSpeaking) {
             setIsSpeaking(false);
@@ -853,7 +853,7 @@ const FeedbackScreen: React.FC<FeedbackProps> = ({ weakTopics, trainerUsername, 
 
         const voices = synth.getVoices();
 
-        //  IMPROVED VOICE SELECTION FOR A NATURAL VOICE (Zira, Samantha, or high-quality Google)
+        //  IMPROVED VOICE SELECTION FOR A NATURAL VOICE (Zira, Samantha, or high-quality Google)
         const naturalVoice = voices.find(v => v.name.includes('Zira') && v.lang.startsWith('en-US')) ||
             voices.find(v => v.name.includes('Samantha') && v.lang.startsWith('en-US')) ||
             voices.find(v => v.name.includes('Google US English') && v.name.includes('Female')) ||
@@ -913,35 +913,49 @@ const FeedbackScreen: React.FC<FeedbackProps> = ({ weakTopics, trainerUsername, 
             const topicsList = topics.join(' and ');
             let mockResponse;
 
-            const primaryTopic = topics[0];
-            const secondaryTopic = topics[1] || topics[0];
+//             if (isOnePieceTheme) {
+//                 mockResponse = `Captain **${username}**! Your Nakama **${starterName}** struggled with the tides in **${topicsList}**. We must fortify the ship! Here is your three-step plan to conquer the Grand Line: 
+                
+// 1.  **Haki Training:** Focus on retrieving core **${topics[0]}** knowledge from memory under pressure. This sharpens your Observation Haki!
+// 2.  **Navigation Check:** Find a fellow pirate and try to explain the **${topics[1] || topics[0]}** concept to them without charts. If you can navigate it, you know it!
+// 3.  **Feast & Rest:** Don't forget the feast! A well-fed pirate is a powerful pirate. You are closer to the title than you think! Kaaizoku ou ni, ore wa naru! (I will be the King of the Pirates!)`;
+//             } else {
+//                 mockResponse = `Trainer **${username}**! Your partner **${starterName}** encountered some unexpected hurdles in **${topicsList}**. Challenging these weak spots is vital! Here is your three-step plan to achieve mastery: 
+                
+// 1.  **Focused Drill:** Concentrate on retrieving core **${topics[0]}** formulas from memory *before* checking your notes. This strengthens foundational knowledge.
+// 2.  **Socratic Review:** Find a friend or tutor and try to explain the **${topics[1] || topics[0]}** concept to them. If you can teach it, you know it!
+// 3.  **Rest & Reflect:** Don't forget to take a quick break! A rested mind is a focused mind. You are closer to the champion's title than you think! Allez!`;
+//             }
+
+const primaryTopic = topics[0];
+const secondaryTopic = topics[1] || topics[0];
 
 
-            if (isOnePieceTheme) {
-                mockResponse = `**☠️ WANTED: THE GRAND LINE QUEST ☠️**\n\n` +
-                    `**CAPTAIN:** **${username}**\n` +
-                    `**TARGET (Nakama):** **${starterName}**\n` +
-                    `**FAILURE POINT (Bounty Zone):** **${topicsList}**\n\n` +
-                    `Captain, a minor challenge in this zone is holding us back. Your Nakama needs a tailored plan to defeat this challenge and raise their bounty!\n\n` +
-                    `** QUEST LOG: THREE STEPS TO GOLD **\n\n` +
-                    `1.  **Feast & Rest:**\n` +
-                    `    * **Action:** Execute a full recall of the *core logic* of **${primaryTopic}** without any notes or assistance. This sharpens your senses for the next battle!\n` +
-                    `2.  **SAIL MASTER: Charting the Course!**\n` +
-                    `    * **Action:** Try to explain the **${secondaryTopic}** concept to a crewmate. If you can make them understand it, you've successfully charted the course.\n` +
-                    `3.  **Feast & Rest:** Take a moment for a huge feast! A rested pirate is a powerful one. You are closer to the title than you think! **Kaaizoku ou ni, ore wa naru!** (I will be the King of the Pirates!)`;
-            } else {
-                mockResponse = `** TRAINER REPORT: THE CHALLENGE AWAITS **\n\n` +
-                    `**TRAINER:** **${username}**\n` +
-                    `**PARTNER:** **${starterName}**\n` +
-                    `**ARENA FLAWS (Topics):** **${topicsList}**\n\n` +
-                    `Trainer, your partner encountered a challenging opponent in the arena. No weakness is permanent—it's just fuel for the next victory!\n\n` +
-                    `** TRAINING PLAN: THREE STEPS TO MASTERY **\n\n` +
-                    `1.  **Focused Drill: Foundational Strength**\n` +
-                    `    *  Memorizing and instantly recalling the essential formulas/rules for **${primaryTopic}** *before* checking your notes. Speed is key!\n` +
-                    `2.  **Socratic Review: Socratic Sparring**\n` +
-                    `    *  Teach the **${secondaryTopic}** concept to a friend. If you can mentor them to victory, your mastery is complete.\n` +
-                    `3.  **VICTORY LAP:** You've earned a short break! Mental focus wins the day. You are much closer to the champion's title than you realize! **Allez!** (Go!)`;
-            }
+if (isOnePieceTheme) {
+    mockResponse = `**☠️ WANTED: THE GRAND LINE QUEST ☠️**\n\n` +
+                   `**CAPTAIN:** **${username}**\n` +
+                   `**TARGET (Nakama):** **${starterName}**\n` +
+                   `**FAILURE POINT (Bounty Zone):** **${topicsList}**\n\n` +
+                   `Captain, a minor challenge in this zone is holding us back. Your Nakama needs a tailored plan to defeat this challenge and raise their bounty!\n\n` +
+                   `** QUEST LOG: THREE STEPS TO GOLD **\n\n` +
+                   `1.  **Feast & Rest:**\n` +
+                   `    * **Action:** Execute a full recall of the *core logic* of **${primaryTopic}** without any notes or assistance. This sharpens your senses for the next battle!\n` +
+                   `2.  **SAIL MASTER: Charting the Course!**\n` +
+                   `    * **Action:** Try to explain the **${secondaryTopic}** concept to a crewmate. If you can make them understand it, you've successfully charted the course.\n` +
+                   `3.  **Feast & Rest:** Take a moment for a huge feast! A rested pirate is a powerful one. You are closer to the title than you think! **Kaaizoku ou ni, ore wa naru!** (I will be the King of the Pirates!)`;
+} else {
+    mockResponse = `** TRAINER REPORT: THE CHALLENGE AWAITS **\n\n` +
+                   `**TRAINER:** **${username}**\n` +
+                   `**PARTNER:** **${starterName}**\n` +
+                   `**ARENA FLAWS (Topics):** **${topicsList}**\n\n` +
+                   `Trainer, your partner encountered a challenging opponent in the arena. No weakness is permanent—it's just fuel for the next victory!\n\n` +
+                   `** TRAINING PLAN: THREE STEPS TO MASTERY **\n\n` +
+                   `1.  **Focused Drill: Foundational Strength**\n` +
+                   `    *  Memorizing and instantly recalling the essential formulas/rules for **${primaryTopic}** *before* checking your notes. Speed is key!\n` +
+                   `2.  **Socratic Review: Socratic Sparring**\n` +
+                   `    *  Teach the **${secondaryTopic}** concept to a friend. If you can mentor them to victory, your mastery is complete.\n` +
+                   `3.  **VICTORY LAP:** You've earned a short break! Mental focus wins the day. You are much closer to the champion's title than you realize! **Allez!** (Go!)`;
+}
 
 
             setFeedback(mockResponse);
@@ -1019,7 +1033,7 @@ const FeedbackScreen: React.FC<FeedbackProps> = ({ weakTopics, trainerUsername, 
 };
 
 
-// Leaderboard Screen 
+// Leaderboard Screen 
 const LeaderboardScreen: React.FC = () => {
     const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
     const [loading, setLoading] = useState(true);
@@ -1089,12 +1103,6 @@ const LeaderboardScreen: React.FC = () => {
             <div className="p-10 bg-rose-900/50 border border-rose-500 rounded-xl shadow-2xl w-full max-w-4xl mx-auto text-rose-300">
                 <h3 className="text-xl font-bold text-rose-400 mb-3">Leaderboard Error</h3>
                 <p className="text-rose-300">{error}</p>
-                <button
-                    onClick={() => setLeaderboard(MOCK_LEADERBOARD_DATA)}
-                    className="mt-4 px-4 py-2 bg-blue-500 text-white font-bold rounded-lg hover:bg-blue-600 transition shadow-md"
-                >
-                    Show Mock Data
-                </button>
             </div>
         );
     }
@@ -1185,7 +1193,7 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess }) => {
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
     const [themeName, setThemeName] = useState<AppTheme>('pokemon_kalos');
-    const [pokemonName, setPokemonName] = useState('Pikachu');
+    const [pokemonName, setPokemonName] = useState('Pikachu'); 
     const [isRegisterMode, setIsRegisterMode] = useState(false);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
@@ -1311,12 +1319,12 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess }) => {
                         onChange={(e) => {
                             setThemeName(e.target.value as AppTheme);
                             if (isRegisterMode && e.target.value !== 'pokemon_kalos') {
-                                setPokemonName('Turtwig');
+                                setPokemonName('Turtwig'); 
                             } else if (isRegisterMode && e.target.value === 'pokemon_kalos') {
                                 setPokemonName('Pikachu');
                             }
                         }}
-                        disabled={isRegisterMode && themeName === 'one_piece'}
+                        disabled={isRegisterMode && themeName === 'one_piece'} 
                         className="w-full h-14 p-3 border-none bg-[#151C20] text-white rounded-xl focus:ring-2 focus:ring-[#00FFD1] shadow-inner shadow-gray-700/50"
                     >
                         <option value="pokemon_kalos">Pokémon (Kalos Quest)</option>
@@ -1471,8 +1479,8 @@ const FeatureRow: React.FC = () => {
     const features = [
         {
             name: "Pikachu",
-            image: "/images/pikachu_starter.png",
-            color: "bg-yellow-500",
+            image: "/images/pikachu_starter.png", 
+            color: "bg-yellow-500", 
             description: "The iconic \"Electric Pokémon.\" Choosing Pikachu channels boundless energy and lightning-fast critical thinking. It is the perfect partner for trainers seeking electric efficiency and impactful, dynamic solutions."
         },
         {
@@ -1613,6 +1621,451 @@ const LandingScreen: React.FC<{ onStartJourney: () => void }> = ({ onStartJourne
     );
 };
 
+const notes_and_lists = {
+    get_notes_and_lists: async ({ search_term, hint }: any) => {
+        await new Promise(resolve => setTimeout(resolve, 500));
+        if (search_term === 'My Grand Line Study List') {
+             return {
+                notes_and_lists_items: [
+                    {
+                        list_content: {
+                            list_items: [
+                                { text_content: "Review Grand Line Map (Kinematics)", checked: false, list_item_id: "1665488100001" },
+                                { text_content: "Practice Haki (Math Integrals)", checked: false, list_item_id: "1665488100002" },
+                                { text_content: "Raid a Marine Base (Ecology)", checked: true, list_item_id: "1665488100003" },
+                            ]
+                        }
+                    }
+                ]
+            };
+        }
+        if (search_term === 'My Pokémon Study List') {
+            return {
+                notes_and_lists_items: [
+                    {
+                        list_content: {
+                            list_items: [
+                                { text_content: "Review Physics Kinematics", checked: false, list_item_id: "1665488200001" },
+                                { text_content: "Practice Math Integrals", checked: false, list_item_id: "1665488200002" },
+                                { text_content: "Read Chapter 4 Bio", checked: true, list_item_id: "1665488200003" },
+                            ]
+                        }
+                    }
+                ]
+            };
+        }
+        return { notes_and_lists_items: [] };
+    },
+    create_list: async ({ list_name, elements_to_add }: any) => { await new Promise(resolve => setTimeout(resolve, 500)); return {}; },
+    add_to_list: async () => { await new Promise(resolve => setTimeout(resolve, 100)); },
+    update_list_item: async () => { await new Promise(resolve => setTimeout(resolve, 100)); },
+    delete_list_item: async () => { await new Promise(resolve => setTimeout(resolve, 100)); },
+};
+
+
+const TodoListScreen = () => {
+    const { theme } = useAuth();
+    const isOnePieceTheme = theme === 'one_piece';
+    const initialListName = isOnePieceTheme ? 'Grand Line Mission Log' : 'My Pokémon Study List';
+    const styles = getThemeStyles(theme);
+
+    interface ListItem {
+        text_content: string;
+        checked: boolean;
+        list_item_id: string;
+    }
+
+    const [task, setTask] = useState('');
+    const [listName, setListName] = useState(initialListName);
+    const [isLoading, setIsLoading] = useState(false);
+    const [currentList, setCurrentList] = useState<ListItem[] | null>(null); 
+    const [message, setMessage] = useState('');
+
+
+    const createOrGetList = useCallback(async () => {
+        setIsLoading(true);
+        setMessage('');
+        try {
+            const result = await notes_and_lists.get_notes_and_lists({ search_term: initialListName, hint: 'LIST' });
+            if (result.notes_and_lists_items && result.notes_and_lists_items.length > 0) {
+                setCurrentList(result.notes_and_lists_items[0].list_content.list_items as ListItem[]);
+                setMessage(`${initialListName} loaded successfully.`);
+                return;
+            }
+
+            await notes_and_lists.create_list({ 
+                list_name: initialListName, 
+                elements_to_add: isOnePieceTheme ? ["Review Grand Line Map (Kinematics)", "Practice Haki (Math Integrals)"] : ["Review Physics Kinematics", "Practice Math Integrals"] 
+            });
+            setCurrentList(isOnePieceTheme ? 
+                [{ text_content: "Review Grand Line Map (Kinematics)", checked: false, list_item_id: "init1" }, { text_content: "Practice Haki (Math Integrals)", checked: false, list_item_id: "init2" }] :
+                [{ text_content: "Review Physics Kinematics", checked: false, list_item_id: "init1" }, { text_content: "Practice Math Integrals", checked: false, list_item_id: "init2" }]
+            );
+
+            setMessage(`New list created: ${initialListName}`);
+
+        } catch (error) {
+            setMessage('Error accessing the list. Try again.');
+            console.error(error);
+        } finally {
+            setIsLoading(false);
+        }
+    }, [initialListName, isOnePieceTheme]);
+
+    const addTask = async () => {
+        if (!task.trim() || isLoading) return; 
+        setIsLoading(true);
+        setMessage('');
+
+        const newTaskText = task.trim();
+        const newList = [...(currentList || []), { text_content: newTaskText, checked: false, list_item_id: Date.now().toString() }];
+        await notes_and_lists.add_to_list({ search_term: listName, elements_to_add: [newTaskText], is_bulk_mutation: false });
+
+        setCurrentList(newList);
+        setTask('');
+        setMessage(`Added task: "${newTaskText}"`);
+        setIsLoading(false);
+    };
+
+    const toggleTask = (id: string) => {
+        if (!currentList) return;
+        const updatedList = currentList.map(item =>
+            item.list_item_id === id ? { ...item, checked: !item.checked } : item
+        );
+        setCurrentList(updatedList);
+    };
+
+    const removeTask = (id: string) => {
+        if (!currentList) return;
+        const updatedList = currentList.filter(item => item.list_item_id !== id);
+        setCurrentList(updatedList);
+    };
+
+    useEffect(() => {
+        createOrGetList();
+    }, [createOrGetList]);
+
+    const completedTasks = currentList ? currentList.filter(item => item.checked) : [];
+    const pendingTasks = currentList ? currentList.filter(item => !item.checked) : [];
+
+    return (
+        <div className={`p-6 md:p-10 ${styles.bg} rounded-2xl shadow-2xl w-full max-w-4xl mx-auto border-4 ${styles.border} backdrop-blur-md`}>
+            <h1 className={`text-4xl font-extrabold text-white mb-6 border-b-4 ${styles.borderColor} pb-2 flex items-center`}>
+                <List className={`w-8 h-8 mr-3 ${styles.accentColor}`} /> {listName}
+            </h1>
+            <p className="text-gray-300 mb-6 text-lg">
+                {isOnePieceTheme ? 'Set sail with your crew\'s next mission objectives.' : 'Master your study tasks like a Pokémon Master!'}
+            </p>
+
+            {/* Task Input */}
+            <div className="flex space-x-3 mb-8">
+                <input
+                    type="text"
+                    placeholder={isOnePieceTheme ? "Enter a new bounty objective..." : "Enter a new study task (e.g., 'Read Chapter 4 Bio')"}
+                    value={task}
+                    onChange={(e) => setTask(e.target.value)}
+                    onKeyPress={(e) => e.key === 'Enter' && addTask()}
+                    disabled={isLoading}
+                    className={`flex-grow py-3 px-4 border-2 border-gray-600 rounded-xl focus:outline-none ${styles.inputFocus} transition shadow-md text-white bg-slate-700/80`}
+                />
+                <button
+                    onClick={addTask}
+                    disabled={isLoading || !task.trim()}
+                    className={`flex items-center text-white font-bold py-3 px-6 rounded-xl transition shadow-lg disabled:opacity-50 ${styles.accentBg}`}
+                >
+                    <Plus className="w-5 h-5 mr-2" /> {isOnePieceTheme ? 'Add Objective' : 'Add Task'}
+                </button>
+            </div>
+            {isLoading && (
+                <p className={`flex items-center mb-4 ${styles.accentColor}`}>
+                    <Clock className="w-4 h-4 mr-2 animate-spin" /> Loading list...
+                </p>
+            )}
+            {message && <p className="text-sm text-gray-400 mb-4">{message}</p>}
+            <div className="bg-slate-800/90 p-6 rounded-2xl shadow-inner border border-slate-700">
+                <h2 className={`text-2xl font-bold mb-4 ${styles.accentColor}`}>{listName}</h2>
+
+                <h3 className={`text-xl font-semibold text-gray-300 mb-3 border-b pb-1 border-slate-700`}>Pending ({pendingTasks.length})</h3>
+                <ul className="space-y-3 mb-6">
+                    {pendingTasks.map((item) => (
+                        <li key={item.list_item_id} className={`flex items-center justify-between p-3 bg-slate-700/70 rounded-lg border-l-4 ${styles.listItemBorder} hover:shadow-md transition`}>
+                            <span className="text-white flex-grow cursor-pointer" onClick={() => toggleTask(item.list_item_id)}>
+                                {item.text_content}
+                            </span>
+                            <div className="flex items-center space-x-2">
+                                <button
+                                    onClick={() => toggleTask(item.list_item_id)}
+                                    className="text-gray-400 hover:text-green-500 transition p-1"
+                                    title="Mark as Complete"
+                                >
+                                    <CheckCircle className="w-6 h-6" />
+                                </button>
+                                <button
+                                    onClick={() => removeTask(item.list_item_id)}
+                                    className="text-gray-400 hover:text-red-500 transition p-1"
+                                    title="Delete Task"
+                                >
+                                    <Trash2 className="w-6 h-6" />
+                                </button>
+                            </div>
+                        </li>
+                    ))}
+                    {pendingTasks.length === 0 && <p className="text-gray-500 italic p-3">Nothing pending! Time for a rest!</p>}
+                </ul>
+                <h3 className="text-xl font-semibold text-gray-300 mb-3 border-b pb-1 border-slate-700">Completed ({completedTasks.length})</h3>
+                <ul className="space-y-3 opacity-70">
+                    {completedTasks.map((item) => (
+                        <li key={item.list_item_id} className="flex items-center justify-between p-3 bg-slate-900/50 rounded-lg border-l-4 border-green-500">
+                            <span className="text-gray-500 line-through flex-grow cursor-pointer" onClick={() => toggleTask(item.list_item_id)}>
+                                {item.text_content}
+                            </span>
+                            <div className="flex items-center space-x-2">
+                                <button
+                                    onClick={() => toggleTask(item.list_item_id)}
+                                    className="text-green-500 hover:text-green-600 transition p-1"
+                                    title="Mark as Pending"
+                                >
+                                    <CheckCircle className="w-6 h-6 fill-current" />
+                                </button>
+                                <button
+                                    onClick={() => removeTask(item.list_item_id)}
+                                    className="text-gray-400 hover:text-red-500 transition p-1"
+                                    title="Delete Task"
+                                >
+                                    <Trash2 className="w-6 h-6" />
+                                </button>
+                            </div>
+                        </li>
+                    ))}
+                </ul>
+            </div>
+        </div>
+    );
+};
+const SubjectData = [
+    {
+        name: "Physics",
+        icon: Ruler,
+        color: "text-blue-400",
+        chapters: [
+            {
+                title: "Kinematics: 1D & 2D Motion",
+                description: "Equations for projectile motion and displacement-time graphs.",
+                link: "https://www.youtube.com/watch?v=hY9zZrYuDVk",
+            },
+            {
+                title: "Newton's Laws & Dynamics",
+                description: "Force, momentum, friction, and circular motion.",
+                link: "https://www.youtube.com/watch?v=aPwqkZCBouU",
+            },
+            {
+                title: "Work, Energy, and Power",
+                description: "Conservation of energy and non-conservative forces.",
+                link: "https://www.youtube.com/watch?v=M6R4bWT-eOU",
+            },
+            {
+                title: "Oscillations",
+                description: "Oscillations, springs, pendulums, and wave characteristics.",
+                link: "http://youtube.com/watch?v=bv8qBsHK9bM",
+            },
+            {
+                title: "Electromagnetism",
+                description: "Electric fields, magnetic fields, and Faraday's Law.",
+                link: "https://www.youtube.com/watch?v=_WXExQ4E-po",
+            },
+        ],
+    },
+    {
+        name: "Chemistry",
+        icon: FlaskRound,
+        color: "text-green-400",
+        chapters: [
+            {
+                title: "Atomic Structure & Periodicity",
+                description: "Quantum numbers, electron configurations, and periodic trends.",
+                link: "https://www.youtube.com/watch?v=Eu0jMAJje0A",
+            },
+            {
+                title: "Chemical Bonding & Molecular Structure",
+                description: "VSEPR theory, hybridization, and intermolecular forces.",
+                link: "https://www.youtube.com/watch?v=BBsd2AdKUqw",
+            },
+            {
+                title: "Stoichiometry & Moles",
+                description: "Limiting reactants, percent yield, and concentration calculations.",
+                link: "https://www.youtube.com/watch?v=jWmrcNrJ59E",
+            },
+            {
+                title: "Chemical Equilibrium",
+                description: "Reversible reactions, Le Chatelier's Principle, and reaction quotient.",
+                link: "https://www.youtube.com/watch?v=ZUm2YPGqtAI",
+            },
+            {
+                title: "Ionic Equilibrium",
+                description: "Strong vs. weak acids/bases and buffer solutions.",
+                link: "https://www.youtube.com/watch?v=IF7DGTWCK_c",
+            },
+        ],
+    },
+    {
+        name: "Mathematics",
+        icon: Calculator,
+        color: "text-purple-400",
+        chapters: [
+            {
+                title: "Differential Calculus",
+                description: "Limits, derivatives, and applications (optimization, related rates).",
+                link: "https://www.youtube.com/watch?v=YQ1Ix2FHlm0",
+            },
+            {
+                title: "Integral Calculus",
+                description: "Antiderivatives, definite integrals, and area under the curve.",
+                link: "https://www.youtube.com/watch?v=PPCdmEDq85Y",
+            },
+            {
+                title: "Trigonometry",
+                description: "Identities, laws of sine/cosine, and complex numbers.",
+                link: "https://www.youtube.com/watch?v=Q6YUTgL5MpI",
+            },
+            {
+                title: "Vectors & 3D Geometry",
+                description: "Dot products, cross products, and equation of a plane.",
+                link: "https://www.youtube.com/watch?v=7v2vYv6Pl7g",
+            },
+            {
+                title: "Probability & Statistics",
+                description: "Bayes' Theorem, discrete/continuous distributions, and regression.",
+                link: "https://www.youtube.com/watch?v=WOKchTFXnYo",
+            },
+        ],
+    },
+    {
+        name: "Biology",
+        icon: Dna,
+        color: "text-red-400",
+        chapters: [
+            {
+                title: "Cell Structure and Function",
+                description: "Eukaryotic and prokaryotic organelles and membrane transport.",
+                link: "https://www.youtube.com/watch?v=hJi3S1haN3Y",
+            },
+            {
+                title: "Molecular Basis of Inheritance (Genetics)",
+                description: "DNA structure, replication, transcription, and translation.",
+                link: "https://www.youtube.com/watch?v=0S5jWfsPTQE",
+            },
+            {
+                title: "Ecology and Environment",
+                description: "Ecosystems, biogeochemical cycles, and biodiversity conservation.",
+                link: "https://www.youtube.com/results?search_query=Ecology+and+Environment+biology+neet",
+            },
+            {
+                title: "Human Physiology (Respiration & Circulation)",
+                description: "Gas exchange mechanism and cardiac cycle.",
+                link: "https://www.youtube.com/watch?v=bDhcqW8dYj8",
+            },
+            {
+                title: "Plant Physiology (Photosynthesis)",
+                description: "Light and dark reactions, C3 and C4 pathways.",
+                link: "https://www.youtube.com/watch?v=d6pfq-0CwZc",
+            },
+        ],
+    },
+
+];
+
+const allResources = SubjectData.flatMap(subject =>
+    subject.chapters.map(chapter => ({
+        ...chapter,
+        subjectName: subject.name,
+        subjectIcon: subject.icon,
+        subjectColor: subject.color
+    }))
+);
+
+
+const ResourceScreen = () => {
+    const { theme } = useAuth();
+    const isOnePieceTheme = theme === 'one_piece';
+    const styles = getThemeStyles(theme);
+    const [searchTerm, setSearchTerm] = useState('');
+
+
+    const filteredResources = allResources.filter(resource => {
+        const query = searchTerm.toLowerCase();
+        return (
+            resource.title.toLowerCase().includes(query) ||
+            resource.description.toLowerCase().includes(query) ||
+            resource.subjectName.toLowerCase().includes(query)
+        );
+    });
+
+    const cardAccentColor = isOnePieceTheme ? 'border-yellow-500' : 'border-cyan-500';
+    const headerIconColor = isOnePieceTheme ? 'text-yellow-500' : 'text-cyan-400';
+
+    return (
+        <div className={`p-6 md:p-10 ${styles.bg} rounded-2xl shadow-2xl w-full max-w-4xl mx-auto border-4 ${styles.border} backdrop-blur-md`}>
+            <h1 className={`text-4xl font-extrabold text-white mb-6 border-b-4 ${styles.borderColor} pb-2 flex items-center`}>
+                <BookOpen className={`w-8 h-8 mr-3 ${headerIconColor}`} /> {isOnePieceTheme ? 'Grand Line Maps' : 'Trainer Resources'} 📚
+            </h1>
+            <p className="text-gray-300 mb-6 text-lg">
+                Access curated links and educational material for your toughest subjects.
+            </p>
+
+            <div className="relative mb-10">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+                <input
+                    type="text"
+                    placeholder="Search by subject (e.g., 'Physics') or chapter title..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className={`w-full py-3 pl-10 pr-4 border-2 border-gray-600 rounded-xl focus:outline-none ${styles.inputFocus} transition shadow-md text-white bg-slate-700/80`}
+                />
+            </div>
+
+
+            {filteredResources.length > 0 ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    {filteredResources.map((resource, index) => {
+                        const IconComponent = resource.subjectIcon; 
+                        return (
+                            <a
+                                key={index}
+                                href={resource.link}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className={`block bg-slate-800/80 p-6 rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:scale-[1.01] border-l-8 ${cardAccentColor}`}
+                            >
+                                <div className="flex items-start space-x-4">
+                                    <IconComponent className={`w-8 h-8 ${resource.subjectColor} flex-shrink-0 mt-1`} />
+                                    <div>
+                                        <p className="text-sm font-semibold mb-1 uppercase text-gray-400">
+                                            {resource.subjectName}
+                                        </p>
+                                        <h2 className="text-2xl font-bold text-white mb-1">
+                                            {resource.title}
+                                        </h2>
+                                        <p className="text-gray-400 mb-3">
+                                            {resource.description}
+                                        </p>
+                                        <span className={`inline-flex items-center text-sm font-semibold hover:text-red-400 transition ${isOnePieceTheme ? 'text-red-500' : 'text-blue-400'}`}>
+                                            View Chapter <ExternalLink className="w-4 h-4 ml-2" />
+                                        </span>
+                                    </div>
+                                </div>
+                            </a>
+                        );
+                    })}
+                </div>
+            ) : (
+                <div className="text-center p-12 bg-slate-800/80 rounded-2xl shadow-lg border border-slate-700">
+                    <p className="text-2xl font-bold text-gray-300">No educational material found for "{searchTerm}" 😥</p>
+                    <p className="text-gray-400 mt-2">Try searching by subject (e.g., "Math") or a topic!</p>
+                </div>
+            )}
+        </div>
+    );
+};
 
 interface MainLayoutProps {
     dashboardData: DashboardData | null;
@@ -1699,6 +2152,8 @@ const MainLayout: React.FC<MainLayoutProps> = ({ dashboardData, loadingDashboard
         { name: 'Leaderboard', screen: 'leaderboard', icon: Trophy },
         { name: 'Start Quiz Battle', screen: 'quiz_select', icon: Zap },
         { name: 'Study Report', screen: 'feedback', icon: MessageSquare },
+        { name: 'Resources', screen: 'resources', icon: BookOpen }, 
+        { name: 'To-Do List', screen: 'todo_list', icon: List },    
     ];
 
     let screenContent;
@@ -1751,6 +2206,12 @@ const MainLayout: React.FC<MainLayoutProps> = ({ dashboardData, loadingDashboard
                 />
             );
             break;
+        case 'resources': 
+            screenContent = <ResourceScreen />;
+            break;
+        case 'todo_list': 
+            screenContent = <TodoListScreen />;
+            break;
         default:
             screenContent = <p className="text-gray-900">Select a navigation link.</p>;
     }
@@ -1780,7 +2241,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({ dashboardData, loadingDashboard
                             key={item.name}
                             onClick={() => navigate(item.screen as LoggedInScreen)}
                             className={`flex items-center w-full px-5 py-3 rounded-lg font-bold transition-all duration-300
-                                         ${currentScreen === item.screen || (item.screen === 'quiz_select' && currentScreen === 'quiz_battle')
+                                        ${currentScreen === item.screen || (item.screen === 'quiz_select' && currentScreen === 'quiz_battle')
                                             ? 'bg-blue-600 text-white shadow-xl shadow-blue-500/30 transform scale-[1.02] border border-cyan-500'
                                             : 'text-gray-300 hover:bg-slate-700 hover:text-cyan-400'
                                         }`}
@@ -1913,6 +2374,8 @@ const OnePieceMainLayout: React.FC<OnePieceMainLayoutProps> = ({ dashboardData, 
         { name: 'Grand Line Rankings', screen: 'leaderboard', icon: Trophy },
         { name: 'Bounty Quests (Quiz)', screen: 'quiz_select', icon: Zap },
         { name: 'Shanks\' Report', screen: 'feedback', icon: MessageSquare },
+        { name: 'Grand Line Maps', screen: 'resources', icon: BookOpen }, 
+        { name: 'Mission Log', screen: 'todo_list', icon: List },        
     ];
 
     let screenContent;
@@ -2004,7 +2467,7 @@ const OnePieceMainLayout: React.FC<OnePieceMainLayoutProps> = ({ dashboardData, 
                     <h2 className="text-3xl font-black text-yellow-500 mb-4">Grand Line Bounty Quest: Battle Engaged</h2>
                     <p className="text-lg text-white mt-2 mb-6">You are fighting for **{currentSubject}** knowledge! (Note: The Quiz UI below uses the Pokémon theme.)</p>
                     <QuizBattle
-                        subject={currentSubject || 'Physics'}
+                        subject={currentSubject || 'Physics'} 
                         onQuizComplete={handleQuizComplete}
                         onExit={handleExitQuiz}
                     />
@@ -2019,6 +2482,12 @@ const OnePieceMainLayout: React.FC<OnePieceMainLayoutProps> = ({ dashboardData, 
                     pokemonName={partnerName}
                 />
             );
+            break;
+        case 'resources': 
+            screenContent = <ResourceScreen />;
+            break;
+        case 'todo_list':
+            screenContent = <TodoListScreen />;
             break;
         default:
             screenContent = <p className="text-gray-900">Choose your destination!</p>;
@@ -2049,7 +2518,7 @@ const OnePieceMainLayout: React.FC<OnePieceMainLayoutProps> = ({ dashboardData, 
                             key={item.name}
                             onClick={() => navigate(item.screen as LoggedInScreen)}
                             className={`flex items-center w-full px-5 py-3 rounded-lg font-bold transition-all duration-300
-                                         ${currentScreen === item.screen || (item.screen === 'quiz_select' && currentScreen === 'quiz_battle')
+                                        ${currentScreen === item.screen || (item.screen === 'quiz_select' && currentScreen === 'quiz_battle')
                                             ? 'bg-red-700 text-white shadow-xl shadow-red-500/30 transform scale-[1.02] border border-yellow-500'
                                             : 'text-gray-300 hover:bg-red-900/40 hover:text-yellow-500'
                                         }`}
