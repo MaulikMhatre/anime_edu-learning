@@ -1,5 +1,6 @@
 
 
+
 'use client';
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
@@ -568,9 +569,12 @@ interface DashboardProps {
     onStartQuiz: (subject: string) => void;
     dashboardData: DashboardData | null;
     onViewLeaderboard: () => void;
+    pomodoroStatus: 'resting' | 'active' | 'breaking';
+    pomodoroTimeLeft: number;
+    handlePomodoroToggle: () => void;
 }
 
-const Dashboard: React.FC<DashboardProps> = ({ dashboardData, onViewLeaderboard }) => {
+const Dashboard: React.FC<DashboardProps> = ({ dashboardData, onViewLeaderboard, pomodoroStatus, pomodoroTimeLeft, handlePomodoroToggle }) => {
 
     const weakTopics = dashboardData?.last_weak_topics || [];
     const trainer = dashboardData?.trainer_card;
@@ -582,6 +586,34 @@ const Dashboard: React.FC<DashboardProps> = ({ dashboardData, onViewLeaderboard 
     const xp_percent = required_xp_mod > 0 ? Math.min(100, (current_xp_mod / required_xp_mod) * 100) : 0;
 
     const pokemonImageUrl = pokemon?.image_url || 'https://placehold.co/128x128/999999/white?text=Partner+Pokemon';
+
+    const POMODORO_WORK_DURATION = 25 * 60;
+
+    let fatigueBarPercent = 0;
+    let fatigueBarColor = 'bg-green-500';
+    let fatigueBarText = 'Ready to Train!';
+    let timerMins = Math.floor(pomodoroTimeLeft / 60);
+    let timerSecs = pomodoroTimeLeft % 60;
+    const timerDisplay = `${timerMins.toString().padStart(2, '0')}:${timerSecs.toString().padStart(2, '0')}`;
+
+    if (pomodoroStatus === 'active') {
+        const energyLeft = pomodoroTimeLeft;
+        fatigueBarPercent = (energyLeft / POMODORO_WORK_DURATION) * 100;
+        fatigueBarColor = fatigueBarPercent > 50 ? 'bg-emerald-500' : (fatigueBarPercent > 20 ? 'bg-yellow-500' : 'bg-rose-500');
+        fatigueBarText = `Training Active: ${timerDisplay} left`;
+    } else if (pomodoroStatus === 'breaking') {
+        const breakElapsed = POMODORO_BREAK_DURATION - pomodoroTimeLeft;
+        fatigueBarPercent = (breakElapsed / POMODORO_BREAK_DURATION) * 100;
+        fatigueBarColor = 'bg-cyan-500';
+        fatigueBarText = `Break Time: ${timerDisplay} left (Resting)`;
+    } else { // resting
+        fatigueBarPercent = 100;
+        fatigueBarColor = 'bg-emerald-500';
+    }
+
+    const buttonText = pomodoroStatus === 'active' ? 'Training Active...' : (pomodoroStatus === 'breaking' ? 'Pokémon Resting...' : 'Start Pomodoro Mode');
+    const buttonDisabled = pomodoroStatus !== 'resting';
+
 
     return (
         <div className="p-6 md:p-10 bg-slate-900/90 rounded-2xl shadow-2xl w-full max-w-4xl mx-auto border-4 border-blue-600/70 backdrop-blur-md">
@@ -645,6 +677,20 @@ const Dashboard: React.FC<DashboardProps> = ({ dashboardData, onViewLeaderboard 
                         </div>
                     </div>
 
+                    {/* POMODORO BAR */}
+                    <div className="w-full mt-6 p-3 bg-slate-700 rounded-xl shadow-inner border border-slate-600">
+                        <p className="text-xs font-black text-gray-400 mb-1 flex justify-between">
+                            <span>TRAINING ENERGY</span>
+                            <span className="text-sm font-extrabold text-white">{fatigueBarPercent.toFixed(0)}%</span>
+                        </p>
+                        <div className="w-full bg-slate-600 rounded-full h-4 shadow-md overflow-hidden">
+                            <div
+                                className={`h-4 ${fatigueBarColor} rounded-full transition-all duration-700 ease-out`}
+                                style={{ width: `${fatigueBarPercent}%` }}
+                            ></div>
+                        </div>
+                        <p className={`text-xs mt-2 font-bold ${pomodoroStatus === 'breaking' ? 'text-cyan-400' : 'text-emerald-400'}`}>{fatigueBarText}</p>
+                    </div>
                 </div>
 
             </div>
@@ -669,12 +715,16 @@ const Dashboard: React.FC<DashboardProps> = ({ dashboardData, onViewLeaderboard 
 
                 <div className="md:col-span-1 flex flex-col justify-center">
                     <button
-                        onClick={() => onStartQuiz('Physics')}
+                        onClick={handlePomodoroToggle}
+                        disabled={buttonDisabled}
                         className={`flex items-center justify-center w-full px-4 py-4 font-black rounded-xl shadow-xl transition-all duration-300 transform hover:scale-[1.05]
-                                                                 'bg-gradient-to-r from-red-600 to-pink-600 text-white hover:from-red-700 hover:to-pink-700 ring-4 ring-pink-400/50'
-                                        }`}
+                            ${buttonDisabled
+                                ? (pomodoroStatus === 'breaking' ? 'bg-cyan-900/70 text-cyan-400 cursor-not-allowed' : 'bg-gray-700 text-gray-400 cursor-not-allowed')
+                                : 'bg-gradient-to-r from-red-600 to-pink-600 text-white hover:from-red-700 hover:to-pink-700 ring-4 ring-pink-400/50'
+                            }`}
                     >
-                        <Zap className="w-5 h-5 mr-2 text-yellow-300" /> Start Quiz Battle
+                        {pomodoroStatus === 'breaking' ? <Heart className="w-5 h-5 mr-2 animate-pulse" /> : <Zap className="w-5 h-5 mr-2 text-yellow-300" />}
+                        {buttonText}
                     </button>
                 </div>
             </div>
@@ -686,13 +736,22 @@ const Dashboard: React.FC<DashboardProps> = ({ dashboardData, onViewLeaderboard 
 interface QuizSubjectSelectionProps {
     onStartQuiz: (subject: string) => void;
     dashboardData: DashboardData | null;
+    pomodoroStatus: 'resting' | 'active' | 'breaking';
+    pomodoroTimeLeft: number;
 }
-const QuizSubjectSelectionScreen: React.FC<QuizSubjectSelectionProps> = ({ onStartQuiz, dashboardData }) => {
+const QuizSubjectSelectionScreen: React.FC<QuizSubjectSelectionProps> = ({ onStartQuiz, dashboardData, pomodoroStatus, pomodoroTimeLeft }) => {
     const subjects = ['Physics', 'Chemistry', 'Mathematics'];
     const weakTopics = dashboardData?.last_weak_topics || [];
 
+    const isBreakTime = pomodoroStatus === 'breaking';
+    const isResting = pomodoroStatus === 'resting';
 
-    const isOnePieceTheme = useAuth().theme === 'one_piece';
+    const timerMins = Math.floor(pomodoroTimeLeft / 60);
+    const timerSecs = pomodoroTimeLeft % 60;
+    const timeDisplay = `${timerMins.toString().padStart(2, '0')}:${timerSecs.toString().padStart(2, '0')}`;
+
+    const { theme } = useAuth();
+    const isOnePieceTheme = theme === 'one_piece';
 
     const themeColors = isOnePieceTheme
         ? { primary: 'text-yellow-500', secondary: 'border-red-600', bg: 'bg-red-800', hover: 'hover:bg-red-700' }
@@ -705,10 +764,34 @@ const QuizSubjectSelectionScreen: React.FC<QuizSubjectSelectionProps> = ({ onSta
             </h2>
 
             <p className="text-gray-300 mb-10 font-medium text-lg">
-                Select a research topic and begin your training!
+                Select a research topic. You must be in an **Active Training Session** (Pomodoro Mode) to begin!
             </p>
 
-            <div className={`grid grid-cols-2 md:grid-cols-4 gap-6`}>
+            {isBreakTime && (
+                <div className="p-4 mb-8 bg-blue-900/70 border-4 border-cyan-500 rounded-xl text-center shadow-lg animate-pulse-slow">
+                    <p className="text-2xl font-black text-cyan-400 flex items-center justify-center">
+                        <Heart className="w-6 h-6 mr-3 text-red-500 fill-red-500" />
+                        POKÉMON RESTING!
+                    </p>
+                    <p className="text-lg font-bold text-gray-300 mt-2">
+                        Wait for your break to end ({timeDisplay}) before starting a new battle.
+                    </p>
+                </div>
+            )}
+
+            {isResting && (
+                <div className="p-4 mb-8 bg-purple-900/70 border-4 border-purple-500 rounded-xl text-center shadow-lg animate-pulse">
+                    <p className="text-2xl font-black text-yellow-400 flex items-center justify-center">
+                        <Zap className="w-6 h-6 mr-3 text-yellow-400 fill-yellow-400" />
+                        ENERGY REQUIRED!
+                    </p>
+                    <p className="text-lg font-bold text-gray-300 mt-2">
+                        Go to the Dashboard and click **Start Pomodoro Mode** to begin your training session.
+                    </p>
+                </div>
+            )}
+
+            <div className={`grid grid-cols-2 md:grid-cols-4 gap-6 ${isBreakTime || isResting ? 'opacity-30 pointer-events-none' : ''}`}>
                 {subjects.map(subject => {
                     const isWeak = weakTopics.includes(subject);
 
@@ -716,6 +799,7 @@ const QuizSubjectSelectionScreen: React.FC<QuizSubjectSelectionProps> = ({ onSta
                         <button
                             key={subject}
                             onClick={() => onStartQuiz(subject)}
+                            disabled={isBreakTime || isResting}
                             className={`flex flex-col items-center justify-center p-4 ${themeColors.bg} text-white font-bold rounded-xl shadow-xl shadow-blue-500/20
                                              ${themeColors.hover} transition duration-300 transform hover:scale-[1.05] text-center text-lg ring-2 ring-cyan-500/50 relative`}
                         >
@@ -1543,7 +1627,51 @@ const MainLayout: React.FC<MainLayoutProps> = ({ dashboardData, loadingDashboard
 
     const [lastQuizWeakTopics, setLastQuizWeakTopics] = useState<string[]>([]);
 
+    const [pomodoroStatus, setPomodoroStatus] = useState<'resting' | 'active' | 'breaking'>('resting');
+    const [pomodoroTimeLeft, setPomodoroTimeLeft] = useState(POMODORO_WORK_DURATION);
+    const [isPomodoroActive, setIsPomodoroActive] = useState(false);
+
+    useEffect(() => {
+        const isQuizScreen = currentScreen === 'quiz_select' || currentScreen === 'quiz_battle';
+        const shouldTimerRun = isPomodoroActive && (isQuizScreen || pomodoroStatus === 'breaking');
+
+        if (!shouldTimerRun) return;
+
+        const timer = setInterval(() => {
+            setPomodoroTimeLeft(prevTime => {
+                if (prevTime > 0) {
+                    return prevTime - 1;
+                } else {
+                    if (pomodoroStatus === 'active') {
+                        setPomodoroStatus('breaking');
+                        return POMODORO_BREAK_DURATION;
+                    } else if (pomodoroStatus === 'breaking') {
+                        setPomodoroStatus('resting');
+                        setIsPomodoroActive(false);
+                        return POMODORO_WORK_DURATION;
+                    }
+                    return 0;
+                }
+            });
+        }, 1000);
+
+        return () => clearInterval(timer);
+    }, [isPomodoroActive, pomodoroStatus, currentScreen]);
+
+    const handlePomodoroToggle = () => {
+        if (pomodoroStatus === 'resting') {
+            setPomodoroStatus('active');
+            setPomodoroTimeLeft(POMODORO_WORK_DURATION);
+            setIsPomodoroActive(true);
+        }
+    };
+
     const handleStartQuiz = (subject: string) => {
+        if (pomodoroStatus !== 'active') {
+            console.warn("Quiz access blocked: Not in an active Pomodoro session.");
+            return;
+        }
+
         setCurrentSubject(subject);
         setCurrentScreen('quiz_battle');
         setIsSidebarOpen(false);
@@ -1586,6 +1714,9 @@ const MainLayout: React.FC<MainLayoutProps> = ({ dashboardData, loadingDashboard
                     onStartQuiz={handleStartQuiz}
                     dashboardData={dashboardData}
                     onViewLeaderboard={() => navigate('leaderboard')}
+                    pomodoroStatus={pomodoroStatus}
+                    pomodoroTimeLeft={pomodoroTimeLeft}
+                    handlePomodoroToggle={handlePomodoroToggle}
                 />
             );
             break;
@@ -1597,6 +1728,8 @@ const MainLayout: React.FC<MainLayoutProps> = ({ dashboardData, loadingDashboard
                 <QuizSubjectSelectionScreen
                     onStartQuiz={handleStartQuiz}
                     dashboardData={dashboardData}
+                    pomodoroStatus={pomodoroStatus}
+                    pomodoroTimeLeft={pomodoroTimeLeft}
                 />
             );
             break;
@@ -1709,6 +1842,46 @@ const OnePieceMainLayout: React.FC<OnePieceMainLayoutProps> = ({ dashboardData, 
     const partnerName = dashboardData?.pokemon_panel.name || 'Nakama';
 
 
+    const [pomodoroStatus, setPomodoroStatus] = useState<'resting' | 'active' | 'breaking'>('resting');
+    const [pomodoroTimeLeft, setPomodoroTimeLeft] = useState(POMODORO_WORK_DURATION);
+    const [isPomodoroActive, setIsPomodoroActive] = useState(false);
+
+
+    useEffect(() => {
+        const isQuizScreen = currentScreen === 'quiz_select' || currentScreen === 'quiz_battle';
+        const shouldTimerRun = isPomodoroActive && (isQuizScreen || pomodoroStatus === 'breaking');
+
+        if (!shouldTimerRun) return;
+
+        const timer = setInterval(() => {
+            setPomodoroTimeLeft(prevTime => {
+                if (prevTime > 0) {
+                    return prevTime - 1;
+                } else {
+                    if (pomodoroStatus === 'active') {
+                        setPomodoroStatus('breaking');
+                        return POMODORO_BREAK_DURATION;
+                    } else if (pomodoroStatus === 'breaking') {
+                        setPomodoroStatus('resting');
+                        setIsPomodoroActive(false);
+                        return POMODORO_WORK_DURATION;
+                    }
+                    return 0;
+                }
+            });
+        }, 1000);
+
+        return () => clearInterval(timer);
+    }, [isPomodoroActive, pomodoroStatus, currentScreen]);
+
+    const handlePomodoroToggle = () => {
+        if (pomodoroStatus === 'resting') {
+            setPomodoroStatus('active');
+            setPomodoroTimeLeft(POMODORO_WORK_DURATION);
+            setIsPomodoroActive(true);
+        }
+    };
+
     const handleQuizComplete = (data: { score: number; weak_topics: string[] }) => {
         setLastQuizWeakTopics(data.weak_topics);
         fetchDashboardData();
@@ -1720,6 +1893,10 @@ const OnePieceMainLayout: React.FC<OnePieceMainLayoutProps> = ({ dashboardData, 
     };
 
     const handleStartQuiz = (subject: string) => {
+        if (pomodoroStatus !== 'active') {
+            alert("Ahoy! You must be in an active training session (Pomodoro Mode) to embark on a Bounty Quest. Click the button on the dashboard to start!");
+            return;
+        }
         setCurrentSubject(subject);
         setCurrentScreen('quiz_battle');
         setIsSidebarOpen(false);
@@ -1741,6 +1918,14 @@ const OnePieceMainLayout: React.FC<OnePieceMainLayoutProps> = ({ dashboardData, 
     let screenContent;
     switch (currentScreen) {
         case 'dashboard':
+            const isBreakTime = pomodoroStatus === 'breaking';
+            const isResting = pomodoroStatus === 'resting';
+
+            const timerMins = Math.floor(pomodoroTimeLeft / 60);
+            const timerSecs = pomodoroTimeLeft % 60;
+            const timeDisplay = `${timerMins.toString().padStart(2, '0')}:${timerSecs.toString().padStart(2, '0')}`;
+            const buttonText = isResting ? 'Start Pomodoro Mode (Begin Training)' : (isBreakTime ? `Break Time: ${timeDisplay}` : `Training Active: ${timeDisplay}`);
+
             screenContent = (
                 <div className="p-6 md:p-10 bg-gray-900/90 rounded-2xl shadow-2xl w-full max-w-4xl mx-auto border-4 border-yellow-500/70 backdrop-blur-md">
                     <h1 className="text-3xl font-extrabold text-red-600 mb-6 border-b-2 border-yellow-500 pb-4 drop-shadow-md">
@@ -1775,12 +1960,25 @@ const OnePieceMainLayout: React.FC<OnePieceMainLayoutProps> = ({ dashboardData, 
                             </div>
 
                             <button
-                                onClick={() => navigate('quiz_select')}
-                                className="mt-8 w-full py-4 font-black text-xl rounded-xl shadow-xl transition-all duration-300 transform hover:scale-[1.01] bg-yellow-500 text-black shadow-yellow-400/50 hover:bg-yellow-600"
+                                onClick={handlePomodoroToggle}
+                                disabled={isBreakTime}
+                                className={`mt-8 w-full py-4 font-black text-xl rounded-xl shadow-xl transition-all duration-300 transform hover:scale-[1.01]
+                                    ${isBreakTime
+                                        ? 'bg-gray-700 text-gray-400 cursor-not-allowed'
+                                        : isResting
+                                            ? 'bg-yellow-500 text-black shadow-yellow-400/50 hover:bg-yellow-600'
+                                            : 'bg-red-600 text-white shadow-red-500/50 animate-pulse'
+                                    }`}
                             >
-                                <Zap className="inline w-6 h-6 mr-2" /> Start Bounty Quest
+                                <Zap className="inline w-6 h-6 mr-2" /> {buttonText}
                             </button>
 
+                            <button
+                                onClick={() => navigate('quiz_select')}
+                                className="mt-4 w-full py-2 bg-gray-700 text-white font-bold rounded-xl hover:bg-gray-600 transition"
+                            >
+                                Continue to Bounty Quests
+                            </button>
                         </>
                     )}
                 </div>
@@ -1794,6 +1992,8 @@ const OnePieceMainLayout: React.FC<OnePieceMainLayoutProps> = ({ dashboardData, 
                 <QuizSubjectSelectionScreen
                     onStartQuiz={handleStartQuiz}
                     dashboardData={dashboardData}
+                    pomodoroStatus={pomodoroStatus}
+                    pomodoroTimeLeft={pomodoroTimeLeft}
                 />
             );
             break;
