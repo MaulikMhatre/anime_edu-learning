@@ -746,7 +746,12 @@ const QuizSubjectSelectionScreen: React.FC<QuizSubjectSelectionProps> = ({ onSta
     const timerSecs = pomodoroTimeLeft % 60;
     const timeDisplay = `${timerMins.toString().padStart(2, '0')}:${timerSecs.toString().padStart(2, '0')}`;
 
-    const isOnePieceTheme = useAuth().theme === 'one_piece';
+    const timerMins = Math.floor(pomodoroTimeLeft / 60);
+    const timerSecs = pomodoroTimeLeft % 60;
+    const timeDisplay = `${timerMins.toString().padStart(2, '0')}:${timerSecs.toString().padStart(2, '0')}`;
+
+    const { theme } = useAuth();
+    const isOnePieceTheme = theme === 'one_piece';
 
     const themeColors = isOnePieceTheme
         ? { primary: 'text-yellow-500', secondary: 'border-red-600', bg: 'bg-red-800', hover: 'hover:bg-red-700' }
