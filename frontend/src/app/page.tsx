@@ -296,7 +296,7 @@ const QuizBattle: React.FC<QuizBattleProps> = ({ subject, onQuizComplete, onExit
 
             for (let i = 0; i < maxRetries; i++) {
                 try {
-                    response = await fetch('http://127.0.0.1:5000/api/generate_quiz', {
+                    response = await fetch('https://anime-edu-learning-1.onrender.com/api/generate_quiz', {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
@@ -400,7 +400,7 @@ const QuizBattle: React.FC<QuizBattleProps> = ({ subject, onQuizComplete, onExit
 
             for (let i = 0; i < maxRetries; i++) {
                 try {
-                    response = await fetch('http://127.0.0.1:5000/api/submit_quiz', {
+                    response = await fetch('https://anime-edu-learning-1.onrender.com/api/submit_quiz', {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
@@ -1059,7 +1059,7 @@ const LeaderboardScreen: React.FC = () => {
 
             for (let i = 0; i < maxRetries; i++) {
                 try {
-                    response = await fetch('http://127.0.0.1:5000/api/leaderboard');
+                    response = await fetch('https://anime-edu-learning-1.onrender.com/api/leaderboard');
                     data = await response.json();
 
                     if (response.ok) {
@@ -1228,7 +1228,7 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess }) => {
 
             for (let i = 0; i < maxRetries; i++) {
                 try {
-                    response = await fetch(`http://127.0.0.1:5000/api/${endpoint}`, {
+                    response = await fetch(`https://anime-edu-learning-1.onrender.com/api/${endpoint}`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify(body),
@@ -2592,7 +2592,7 @@ const App: React.FC = () => {
 
             for (let i = 0; i < maxRetries; i++) {
                 try {
-                    response = await fetch('http://127.0.0.1:5000/api/dashboard', {
+                    response = await fetch('https://anime-edu-learning-1.onrender.com/api/dashboard', {
                         method: 'GET',
                         headers: { 'Authorization': `Bearer ${token}` },
                     });
