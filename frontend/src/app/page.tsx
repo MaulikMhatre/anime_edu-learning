@@ -1,6 +1,5 @@
 
 
-
 'use client';
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
@@ -9,6 +8,7 @@ import {
     Loader2, User, Star, TrendingUp, Trophy, Egg, LayoutDashboard, Menu, X, MonitorPlay, MessageSquare, Timer,
     List, Plus, Trash2, Clock, Search, Ruler, FlaskRound, Calculator, Dna, ExternalLink
 } from 'lucide-react';
+
 
 
 interface Question {
@@ -42,11 +42,19 @@ interface PokemonPanelData {
     image_url: string;
 }
 
+interface SubjectProgress {
+    subject: string;
+    total_attempts: number;
+    total_correct: number;
+    proficiency_score: number; 
+}
+
 interface DashboardData {
     trainer_card: TrainerCardData;
     pokemon_panel: PokemonPanelData;
     achievements: { badges: number };
     last_weak_topics: string[];
+    subject_progress: SubjectProgress[]; 
 }
 
 interface LeaderboardEntry {
@@ -56,13 +64,13 @@ interface LeaderboardEntry {
     pokemon_name: string;
 }
 
-type LoggedInScreen = 'dashboard' | 'leaderboard' | 'quiz_select' | 'quiz_battle' | 'feedback';
+type LoggedInScreen = 'dashboard' | 'leaderboard' | 'quiz_select' | 'quiz_battle' | 'feedback' | 'resources' | 'todo_list'| 'progress';
 type Screen = 'landing' | 'login' | 'main';
 type AppTheme = 'pokemon_kalos' | 'one_piece' | 'default';
 
 
-const POMODORO_WORK_DURATION = 25 * 60; // 25 mins in seconds
-const POMODORO_BREAK_DURATION = 5 * 60; // 5 mins in seconds
+const POMODORO_WORK_DURATION = 25 * 60; 
+const POMODORO_BREAK_DURATION = 5 * 60; 
 
 
 const getPokemonImageUrl = (name: string): string => {
@@ -145,6 +153,7 @@ const useAuth = () => {
     return { token, userId, isLoggedIn, theme, login, logout };
 };
 
+// --- QUIZ QUESTION COMPONENT ---
 
 interface QuizQuestionProps {
     question: Question;
@@ -222,6 +231,7 @@ const QuizQuestion: React.FC<QuizQuestionProps> = ({
         </div>
     );
 };
+
 
 
 
@@ -552,6 +562,8 @@ const QuizBattle: React.FC<QuizBattleProps> = ({ subject, onQuizComplete, onExit
 };
 
 
+
+
 const StatCard: React.FC<{ icon: React.ReactNode; label: string; value: string | number; color: string }> = ({ icon, label, value, color }) => (
     <div className="flex items-center p-4 bg-slate-800 rounded-xl shadow-lg border border-cyan-500/30 hover:border-cyan-500 transition duration-300">
         <div className="p-3 bg-blue-700 rounded-full mr-4 shadow-xl shadow-blue-500/30">
@@ -613,7 +625,6 @@ const Dashboard: React.FC<DashboardProps> = ({ dashboardData, onViewLeaderboard,
 
     const buttonText = pomodoroStatus === 'active' ? 'Training Active...' : (pomodoroStatus === 'breaking' ? 'Pokémon Resting...' : 'Start Pomodoro Mode');
     const buttonDisabled = pomodoroStatus !== 'resting';
-
 
     return (
         <div className="p-6 md:p-10 bg-slate-900/90 rounded-2xl shadow-2xl w-full max-w-4xl mx-auto border-4 border-blue-600/70 backdrop-blur-md">
@@ -695,7 +706,6 @@ const Dashboard: React.FC<DashboardProps> = ({ dashboardData, onViewLeaderboard,
 
             </div>
 
-            {/* Battle Activation and Weakness Report */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div className="md:col-span-2 p-4 border-l-4 border-purple-500 bg-purple-900/40 rounded-r-xl shadow-inner">
                     <h3 className="text-lg font-bold text-pink-400 mb-2">Weakness Report (Mega Evolve Your Skills)</h3>
@@ -733,6 +743,7 @@ const Dashboard: React.FC<DashboardProps> = ({ dashboardData, onViewLeaderboard,
 };
 
 
+
 interface QuizSubjectSelectionProps {
     onStartQuiz: (subject: string) => void;
     dashboardData: DashboardData | null;
@@ -742,6 +753,7 @@ interface QuizSubjectSelectionProps {
 const QuizSubjectSelectionScreen: React.FC<QuizSubjectSelectionProps> = ({ onStartQuiz, dashboardData, pomodoroStatus, pomodoroTimeLeft }) => {
     const subjects = ['Physics', 'Chemistry', 'Mathematics'];
     const weakTopics = dashboardData?.last_weak_topics || [];
+    const progressData = dashboardData?.subject_progress || []; // NEW: Subject Progress Data
 
     const isBreakTime = pomodoroStatus === 'breaking';
     const isResting = pomodoroStatus === 'resting';
@@ -756,6 +768,10 @@ const QuizSubjectSelectionScreen: React.FC<QuizSubjectSelectionProps> = ({ onSta
     const themeColors = isOnePieceTheme
         ? { primary: 'text-yellow-500', secondary: 'border-red-600', bg: 'bg-red-800', hover: 'hover:bg-red-700' }
         : { primary: 'text-white', secondary: 'border-purple-500', bg: 'bg-blue-700', hover: 'hover:bg-blue-600' };
+
+    const getProgress = (subject: string): SubjectProgress | undefined => {
+        return progressData.find(p => p.subject === subject);
+    };
 
     return (
         <div className="p-6 md:p-10 bg-slate-900/90 rounded-2xl shadow-2xl w-full max-w-4xl mx-auto border-4 border-cyan-500/70 backdrop-blur-md">
@@ -794,6 +810,10 @@ const QuizSubjectSelectionScreen: React.FC<QuizSubjectSelectionProps> = ({ onSta
             <div className={`grid grid-cols-2 md:grid-cols-4 gap-6 ${isBreakTime || isResting ? 'opacity-30 pointer-events-none' : ''}`}>
                 {subjects.map(subject => {
                     const isWeak = weakTopics.includes(subject);
+                    const progress = getProgress(subject);
+                    const scorePercent = (progress?.proficiency_score || 0) * 100;
+                    const scoreColor = scorePercent > 80 ? 'bg-emerald-500' : (scorePercent > 50 ? 'bg-yellow-500' : 'bg-red-500');
+
 
                     return (
                         <button
@@ -806,6 +826,23 @@ const QuizSubjectSelectionScreen: React.FC<QuizSubjectSelectionProps> = ({ onSta
                             <MonitorPlay className={`w-6 h-6 mb-2 ${isOnePieceTheme ? themeColors.primary : 'text-cyan-300'}`} />
                             {subject} {isOnePieceTheme ? 'Sea' : ''}
                             {isWeak && <Zap className="w-4 h-4 text-red-400 fill-red-400 absolute top-1 right-1 animate-bounce" />}
+                            
+                            {/* NEW PROGRESS TRACKER UI */}
+                            {progress && (
+                                <div className="w-full mt-3 p-2 bg-slate-700/50 rounded-lg">
+                                    <p className="text-xs font-semibold text-gray-400 text-left">Proficiency</p>
+                                    <div className="w-full h-2 bg-slate-800 rounded-full my-1">
+                                        <div 
+                                            className={`h-2 ${scoreColor} rounded-full transition-all duration-500`} 
+                                            style={{ width: `${scorePercent}%` }}
+                                        ></div>
+                                    </div>
+                                    <div className="flex justify-between text-xs font-black">
+                                        <p className="text-white">{scorePercent.toFixed(0)}%</p>
+                                        <p className="text-gray-500">{progress.total_attempts} Attempts</p>
+                                    </div>
+                                </div>
+                            )}
                         </button>
                     );
                 })}
@@ -813,6 +850,164 @@ const QuizSubjectSelectionScreen: React.FC<QuizSubjectSelectionProps> = ({ onSta
         </div>
     );
 };
+
+
+
+
+
+
+
+
+const ProgressScreen: React.FC<{ dashboardData: DashboardData | null }> = ({ dashboardData }) => {
+    const { theme } = useAuth();
+    const isOnePieceTheme = theme === 'one_piece';
+    const styles = getThemeStyles(theme);
+
+    // Default to mock data if not yet loaded or if empty
+    const progressData: SubjectProgress[] = dashboardData?.subject_progress || [];
+
+    // Map the subject name to its corresponding icon and color for display
+    const subjectVisuals = SubjectData.reduce((acc, subject) => {
+        acc[subject.name] = { icon: subject.icon, color: subject.color };
+        return acc;
+    }, {} as Record<string, { icon: any; color: string }>);
+
+
+    const defaultSubjects = ['Physics', 'Chemistry', 'Mathematics'];
+    const subjectsToDisplay = defaultSubjects.map(subjectName => {
+        const data = progressData.find(p => p.subject === subjectName);
+        const visuals = subjectVisuals[subjectName] || { icon: BookOpen, color: 'text-gray-400' };
+
+        return {
+            name: subjectName,
+            progress: data,
+            visuals: visuals,
+        };
+    });
+
+    const headerIconColor = isOnePieceTheme ? 'text-yellow-500' : 'text-purple-400';
+    const cardBorderColor = isOnePieceTheme ? 'border-red-600' : 'border-blue-600';
+
+    const CircularProgressChart: React.FC<{ percent: number }> = ({ percent }) => {
+        const radius = 50;
+        const circumference = 2 * Math.PI * radius;
+        const offset = circumference - (percent / 100) * circumference;
+
+        let color = 'text-red-500';
+        if (percent > 80) color = 'text-emerald-500';
+        else if (percent > 50) color = 'text-yellow-500';
+
+        return (
+            <div className="relative w-28 h-28">
+                <svg className="w-full h-full transform -rotate-90">
+                    <circle
+                        className="text-slate-700"
+                        strokeWidth="8"
+                        stroke="currentColor"
+                        fill="transparent"
+                        r={radius}
+                        cx="60"
+                        cy="60"
+                    />
+                    <circle
+                        className={`${color} transition-all duration-1000 ease-in-out`}
+                        strokeWidth="8"
+                        strokeDasharray={circumference}
+                        strokeDashoffset={offset}
+                        strokeLinecap="round"
+                        stroke="currentColor"
+                        fill="transparent"
+                        r={radius}
+                        cx="60"
+                        cy="60"
+                    />
+                </svg>
+                <span className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-2xl font-black text-white">
+                    {percent.toFixed(0)}%
+                </span>
+            </div>
+        );
+    };
+
+    return (
+        <div className={`p-6 md:p-10 ${styles.bg} rounded-2xl shadow-2xl w-full max-w-5xl mx-auto border-4 ${styles.border} backdrop-blur-md`}>
+            <h1 className={`text-4xl font-extrabold text-white mb-6 border-b-4 ${styles.borderColor} pb-2 flex items-center`}>
+                <TrendingUp className={`w-8 h-8 mr-3 ${headerIconColor}`} />
+                {isOnePieceTheme ? 'Nakama Skill Mastery' : 'Trainer Skill Mastery'} 📈
+            </h1>
+            <p className="text-gray-300 mb-8 text-lg">
+                Review your long-term performance across all subjects. Focus on skills below $50\%$ proficiency!
+            </p>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {subjectsToDisplay.map(({ name, progress, visuals }) => {
+                    const IconComponent = visuals.icon;
+                    const percent = (progress?.proficiency_score || 0) * 100;
+                    const attempts = progress?.total_attempts || 0;
+                    const correct = progress?.total_correct || 0;
+                    
+                    // Mock bar chart data representing last few quizzes
+                    const mockQuizResults = attempts > 0 
+                        ? [3, 4, 2, 5, 4].slice(0, Math.min(attempts, 5))
+                        : [];
+
+                    return (
+                        <div
+                            key={name}
+                            className={`p-6 bg-slate-800/90 rounded-2xl shadow-xl border-l-4 ${cardBorderColor} transition hover:shadow-2xl`}
+                        >
+                            <div className="flex items-center space-x-3 mb-4">
+                                <IconComponent className={`w-7 h-7 ${visuals.color} fill-current`} />
+                                <h2 className="text-2xl font-bold text-white">{name}</h2>
+                            </div>
+
+                            <div className="flex justify-between items-center mb-6 border-b border-slate-700 pb-4">
+                                <CircularProgressChart percent={percent} />
+                                <div className="text-right">
+                                    <p className="text-sm text-gray-400">Total Quizzes</p>
+                                    <p className="text-3xl font-black text-cyan-400">{attempts / 5 || 0}</p>
+                                    <p className="text-sm text-gray-400 mt-2">Correct Answers</p>
+                                    <p className="text-xl font-bold text-emerald-400">{correct}</p>
+                                </div>
+                            </div>
+
+                            <div className="mt-4">
+                                <h3 className="text-lg font-semibold text-gray-300 mb-3">Recent Performance (Out of 5)</h3>
+                                <div className="flex justify-around items-end h-20 space-x-2">
+                                    {mockQuizResults.map((score, index) => {
+                                        const height = (score / 5) * 100;
+                                        let barColor = 'bg-yellow-500';
+                                        if (score >= 4) barColor = 'bg-emerald-500';
+                                        else if (score <= 2) barColor = 'bg-red-500';
+                                        
+                                        return (
+                                            <div key={index} className="flex flex-col items-center">
+                                                <div
+                                                    className={`w-6 rounded-t-lg ${barColor} transition-all duration-700`}
+                                                    style={{ height: `${height}px` }}
+                                                    title={`Score: ${score}/5`}
+                                                ></div>
+                                                <span className="text-xs text-gray-400 mt-1">Q{index + 1}</span>
+                                            </div>
+                                        );
+                                    })}
+                                    {mockQuizResults.length === 0 && <p className="text-sm text-gray-500 italic">No quiz history.</p>}
+                                </div>
+                            </div>
+                        </div>
+                    );
+                })}
+            </div>
+            
+            {/* Legend/Hint */}
+            <div className="mt-8 p-4 bg-slate-800/80 rounded-xl border border-slate-700 text-sm text-gray-400">
+                <p><strong>Proficiency Score:</strong> The ratio of all correct answers to all attempted questions in this subject.</p>
+                <p className="mt-1"><strong>Recent Performance:</strong> Simulated scores of your last few quizzes (Max 5 questions per quiz).</p>
+            </div>
+        </div>
+    );
+};
+
 
 
 interface FeedbackProps {
@@ -853,7 +1048,7 @@ const FeedbackScreen: React.FC<FeedbackProps> = ({ weakTopics, trainerUsername, 
 
         const voices = synth.getVoices();
 
-        //  IMPROVED VOICE SELECTION FOR A NATURAL VOICE (Zira, Samantha, or high-quality Google)
+
         const naturalVoice = voices.find(v => v.name.includes('Zira') && v.lang.startsWith('en-US')) ||
             voices.find(v => v.name.includes('Samantha') && v.lang.startsWith('en-US')) ||
             voices.find(v => v.name.includes('Google US English') && v.name.includes('Female')) ||
@@ -924,11 +1119,11 @@ const FeedbackScreen: React.FC<FeedbackProps> = ({ weakTopics, trainerUsername, 
                     `**FAILURE POINT (Bounty Zone):** **${topicsList}**\n\n` +
                     `Captain, a minor challenge in this zone is holding us back. Your Nakama needs a tailored plan to defeat this challenge and raise their bounty!\n\n` +
                     `** QUEST LOG: THREE STEPS TO GOLD **\n\n` +
-                    `1.  **Feast & Rest:**\n` +
-                    `    * **Action:** Execute a full recall of the *core logic* of **${primaryTopic}** without any notes or assistance. This sharpens your senses for the next battle!\n` +
-                    `2.  **SAIL MASTER: Charting the Course!**\n` +
-                    `    * **Action:** Try to explain the **${secondaryTopic}** concept to a crewmate. If you can make them understand it, you've successfully charted the course.\n` +
-                    `3.  **Feast & Rest:** Take a moment for a huge feast! A rested pirate is a powerful one. You are closer to the title than you think! **Kaaizoku ou ni, ore wa naru!** (I will be the King of the Pirates!)`;
+                    `1.  **Feast & Rest:**\n` +
+                    `    * **Action:** Execute a full recall of the *core logic* of **${primaryTopic}** without any notes or assistance. This sharpens your senses for the next battle!\n` +
+                    `2.  **SAIL MASTER: Charting the Course!**\n` +
+                    `    * **Action:** Try to explain the **${secondaryTopic}** concept to a crewmate. If you can make them understand it, you've successfully charted the course.\n` +
+                    `3.  **Feast & Rest:** Take a moment for a huge feast! A rested pirate is a powerful one. You are closer to the title than you think! **Kaaizoku ou ni, ore wa naru!** (I will be the King of the Pirates!)`;
             } else {
                 mockResponse = `** TRAINER REPORT: THE CHALLENGE AWAITS **\n\n` +
                     `**TRAINER:** **${username}**\n` +
@@ -936,11 +1131,11 @@ const FeedbackScreen: React.FC<FeedbackProps> = ({ weakTopics, trainerUsername, 
                     `**ARENA FLAWS (Topics):** **${topicsList}**\n\n` +
                     `Trainer, your partner encountered a challenging opponent in the arena. No weakness is permanent—it's just fuel for the next victory!\n\n` +
                     `** TRAINING PLAN: THREE STEPS TO MASTERY **\n\n` +
-                    `1.  **Focused Drill: Foundational Strength**\n` +
-                    `    *  Memorizing and instantly recalling the essential formulas/rules for **${primaryTopic}** *before* checking your notes. Speed is key!\n` +
-                    `2.  **Socratic Review: Socratic Sparring**\n` +
-                    `    *  Teach the **${secondaryTopic}** concept to a friend. If you can mentor them to victory, your mastery is complete.\n` +
-                    `3.  **VICTORY LAP:** You've earned a short break! Mental focus wins the day. You are much closer to the champion's title than you realize! **Allez!** (Go!)`;
+                    `1.  **Focused Drill: Foundational Strength**\n` +
+                    `    * Memorizing and instantly recalling the essential formulas/rules for **${primaryTopic}** *before* checking your notes. Speed is key!\n` +
+                    `2.  **Socratic Review: Socratic Sparring**\n` +
+                    `    * Teach the **${secondaryTopic}** concept to a friend. If you can mentor them to victory, your mastery is complete.\n` +
+                    `3.  **VICTORY LAP:** You've earned a short break! Mental focus wins the day. You are much closer to the champion's title than you realize! **Allez!** (Go!)`;
             }
 
 
@@ -1019,7 +1214,6 @@ const FeedbackScreen: React.FC<FeedbackProps> = ({ weakTopics, trainerUsername, 
 };
 
 
-// Leaderboard Screen 
 const LeaderboardScreen: React.FC = () => {
     const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
     const [loading, setLoading] = useState(true);
@@ -1154,6 +1348,7 @@ const LeaderboardScreen: React.FC = () => {
 };
 
 
+
 interface LoginScreenProps {
     onLoginSuccess: (token: string, userId: string, theme: AppTheme) => void;
 }
@@ -1204,8 +1399,7 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess }) => {
                 ? {
                     username,
                     password,
-                    // Only send pokemon_name if the theme is pokemon_kalos
-                    pokemon_name: themeName === 'pokemon_kalos' ? pokemonName : 'Turtwig',
+                    pokemon_name: themeName === 'pokemon_kalos' ? pokemonName : 'Turtwig', 
                     theme: themeName
                 }
                 : {
@@ -1390,9 +1584,9 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess }) => {
                     onClick={handleSubmit}
                     disabled={loading || !username || !password || (isRegisterMode && themeName === 'pokemon_kalos' && !pokemonName)}
                     className="w-full py-3 mt-2 font-extrabold rounded-lg shadow-lg transition-all duration-300
-                                 bg-gradient-to-t from-orange-500 to-yellow-400
-                                 hover:from-orange-600 hover:to-yellow-300
-                                 text-black disabled:bg-gray-500 disabled:cursor-not-allowed"
+                                     bg-gradient-to-t from-orange-500 to-yellow-400
+                                     hover:from-orange-600 hover:to-yellow-300
+                                     text-black disabled:bg-gray-500 disabled:cursor-not-allowed"
                 >
                     {loading ? (
                         <Loader2 className="w-5 h-5 inline animate-spin text-black" />
@@ -1401,7 +1595,6 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess }) => {
                     )}
                 </button>
 
-                {/* Switch mode link */}
                 <p className="mt-6 text-center text-sm text-gray-300">
                     {isRegisterMode ? 'Already have an account?' : "Don’t have an account?"}
                     <button
@@ -1503,8 +1696,7 @@ const FeatureRow: React.FC = () => {
                 <p className="text-yellow-400 font-semibold mb-2 text-3xl">Discover the Wonders of Pokémon</p>
                 <h3 className="text-6xl font-extrabold mb-6">Explore the Pokémon World</h3>
                 <p className="text-gray-400 max-w-2xl mx-auto text-lg mb-12">
-                    Join us on a captivating Pokémon journey where you'll choose a starter Pokémon, watch it hatch from an egg,
-                    and train to become a master.
+                    Immerse yourself in the captivating world of Pokémon. Choose a starter, watch it hatch, and train to become a master.
                 </p>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
                     {features.map((feature) => {
@@ -1613,6 +1805,454 @@ const LandingScreen: React.FC<{ onStartJourney: () => void }> = ({ onStartJourne
     );
 };
 
+const notes_and_lists = {
+    get_notes_and_lists: async ({ search_term, hint }: any) => {
+        await new Promise(resolve => setTimeout(resolve, 500));
+        if (search_term === 'My Grand Line Study List') {
+             return {
+                 notes_and_lists_items: [
+                     {
+                         list_content: {
+                             list_items: [
+                                 { text_content: "Review Grand Line Map (Kinematics)", checked: false, list_item_id: "1665488100001" },
+                                 { text_content: "Practice Haki (Math Integrals)", checked: false, list_item_id: "1665488100002" },
+                                 { text_content: "Raid a Marine Base (Ecology)", checked: true, list_item_id: "1665488100003" },
+                             ]
+                         }
+                     }
+                 ]
+             };
+        }
+        if (search_term === 'My Pokémon Study List') {
+            return {
+                notes_and_lists_items: [
+                    {
+                        list_content: {
+                            list_items: [
+                                { text_content: "Review Physics Kinematics", checked: false, list_item_id: "1665488200001" },
+                                { text_content: "Practice Math Integrals", checked: false, list_item_id: "1665488200002" },
+                                { text_content: "Read Chapter 4 Bio", checked: true, list_item_id: "1665488200003" },
+                            ]
+                        }
+                    }
+                ]
+            };
+        }
+        return { notes_and_lists_items: [] };
+    },
+    create_list: async ({ list_name, elements_to_add }: any) => { await new Promise(resolve => setTimeout(resolve, 500)); return {}; },
+    add_to_list: async () => { await new Promise(resolve => setTimeout(resolve, 100)); },
+    update_list_item: async () => { await new Promise(resolve => setTimeout(resolve, 100)); },
+    delete_list_item: async () => { await new Promise(resolve => setTimeout(resolve, 100)); },
+};
+
+
+// --- TO-DO LIST SCREEN ---
+const TodoListScreen = () => {
+    const { theme } = useAuth();
+    const isOnePieceTheme = theme === 'one_piece';
+    const initialListName = isOnePieceTheme ? 'Grand Line Mission Log' : 'My Pokémon Study List';
+    const styles = getThemeStyles(theme);
+
+    interface ListItem {
+        text_content: string;
+        checked: boolean;
+        list_item_id: string;
+    }
+
+    const [task, setTask] = useState('');
+    const [listName, setListName] = useState(initialListName);
+    const [isLoading, setIsLoading] = useState(false);
+    const [currentList, setCurrentList] = useState<ListItem[] | null>(null);
+    const [message, setMessage] = useState('');
+
+
+    const createOrGetList = useCallback(async () => {
+        setIsLoading(true);
+        setMessage('');
+        try {
+            const result = await notes_and_lists.get_notes_and_lists({ search_term: initialListName, hint: 'LIST' });
+            if (result.notes_and_lists_items && result.notes_and_lists_items.length > 0) {
+                setCurrentList(result.notes_and_lists_items[0].list_content.list_items as ListItem[]);
+                setMessage(`${initialListName} loaded successfully.`);
+                return;
+            }
+
+            await notes_and_lists.create_list({
+                list_name: initialListName,
+                elements_to_add: isOnePieceTheme ? ["Review Grand Line Map (Kinematics)", "Practice Haki (Math Integrals)"] : ["Review Physics Kinematics", "Practice Math Integrals"]
+            });
+            setCurrentList(isOnePieceTheme ?
+                [{ text_content: "Review Grand Line Map (Kinematics)", checked: false, list_item_id: "init1" }, { text_content: "Practice Haki (Math Integrals)", checked: false, list_item_id: "init2" }] :
+                [{ text_content: "Review Physics Kinematics", checked: false, list_item_id: "init1" }, { text_content: "Practice Math Integrals", checked: false, list_item_id: "init2" }]
+            );
+
+            setMessage(`New list created: ${initialListName}`);
+
+        } catch (error) {
+            setMessage('Error accessing the list. Try again.');
+            console.error(error);
+        } finally {
+            setIsLoading(false);
+        }
+    }, [initialListName, isOnePieceTheme]);
+
+    const addTask = async () => {
+        if (!task.trim() || isLoading) return;
+        setIsLoading(true);
+        setMessage('');
+
+        const newTaskText = task.trim();
+        const newList = [...(currentList || []), { text_content: newTaskText, checked: false, list_item_id: Date.now().toString() }];
+        await notes_and_lists.add_to_list({ search_term: listName, elements_to_add: [newTaskText], is_bulk_mutation: false });
+
+        setCurrentList(newList);
+        setTask('');
+        setMessage(`Added task: "${newTaskText}"`);
+        setIsLoading(false);
+    };
+
+    const toggleTask = (id: string) => {
+        if (!currentList) return;
+        const updatedList = currentList.map(item =>
+            item.list_item_id === id ? { ...item, checked: !item.checked } : item
+        );
+        setCurrentList(updatedList);
+    };
+
+    const removeTask = (id: string) => {
+        if (!currentList) return;
+        const updatedList = currentList.filter(item => item.list_item_id !== id);
+        setCurrentList(updatedList);
+    };
+
+    useEffect(() => {
+        createOrGetList();
+    }, [createOrGetList]);
+
+    const completedTasks = currentList ? currentList.filter(item => item.checked) : [];
+    const pendingTasks = currentList ? currentList.filter(item => !item.checked) : [];
+
+    return (
+        <div className={`p-6 md:p-10 ${styles.bg} rounded-2xl shadow-2xl w-full max-w-4xl mx-auto border-4 ${styles.border} backdrop-blur-md`}>
+            <h1 className={`text-4xl font-extrabold text-white mb-6 border-b-4 ${styles.borderColor} pb-2 flex items-center`}>
+                <List className={`w-8 h-8 mr-3 ${styles.accentColor}`} /> {listName}
+            </h1>
+            <p className="text-gray-300 mb-6 text-lg">
+                {isOnePieceTheme ? 'Set sail with your crew\'s next mission objectives.' : 'Master your study tasks like a Pokémon Master!'}
+            </p>
+
+            {/* Task Input */}
+            <div className="flex space-x-3 mb-8">
+                <input
+                    type="text"
+                    placeholder={isOnePieceTheme ? "Enter a new bounty objective..." : "Enter a new study task (e.g., 'Read Chapter 4 Bio')"}
+                    value={task}
+                    onChange={(e) => setTask(e.target.value)}
+                    onKeyPress={(e) => e.key === 'Enter' && addTask()}
+                    disabled={isLoading}
+                    className={`flex-grow py-3 px-4 border-2 border-gray-600 rounded-xl focus:outline-none ${styles.inputFocus} transition shadow-md text-white bg-slate-700/80`}
+                />
+                <button
+                    onClick={addTask}
+                    disabled={isLoading || !task.trim()}
+                    className={`flex items-center text-white font-bold py-3 px-6 rounded-xl transition shadow-lg disabled:opacity-50 ${styles.accentBg}`}
+                >
+                    <Plus className="w-5 h-5 mr-2" /> {isOnePieceTheme ? 'Add Objective' : 'Add Task'}
+                </button>
+            </div>
+            {isLoading && (
+                <p className={`flex items-center mb-4 ${styles.accentColor}`}>
+                    <Clock className="w-4 h-4 mr-2 animate-spin" /> Loading list...
+                </p>
+            )}
+            {message && <p className="text-sm text-gray-400 mb-4">{message}</p>}
+            <div className="bg-slate-800/90 p-6 rounded-2xl shadow-inner border border-slate-700">
+                <h2 className={`text-2xl font-bold mb-4 ${styles.accentColor}`}>{listName}</h2>
+
+                <h3 className={`text-xl font-semibold text-gray-300 mb-3 border-b pb-1 border-slate-700`}>Pending ({pendingTasks.length})</h3>
+                <ul className="space-y-3 mb-6">
+                    {pendingTasks.map((item) => (
+                        <li key={item.list_item_id} className={`flex items-center justify-between p-3 bg-slate-700/70 rounded-lg border-l-4 ${styles.listItemBorder} hover:shadow-md transition`}>
+                            <span className="text-white flex-grow cursor-pointer" onClick={() => toggleTask(item.list_item_id)}>
+                                {item.text_content}
+                            </span>
+                            <div className="flex items-center space-x-2">
+                                <button
+                                    onClick={() => toggleTask(item.list_item_id)}
+                                    className="text-gray-400 hover:text-green-500 transition p-1"
+                                    title="Mark as Complete"
+                                >
+                                    <CheckCircle className="w-6 h-6" />
+                                </button>
+                                <button
+                                    onClick={() => removeTask(item.list_item_id)}
+                                    className="text-gray-400 hover:text-red-500 transition p-1"
+                                    title="Delete Task"
+                                >
+                                    <Trash2 className="w-6 h-6" />
+                                </button>
+                            </div>
+                        </li>
+                    ))}
+                    {pendingTasks.length === 0 && <p className="text-gray-500 italic p-3">Nothing pending! Time for a rest!</p>}
+                </ul>
+                <h3 className="text-xl font-semibold text-gray-300 mb-3 border-b pb-1 border-slate-700">Completed ({completedTasks.length})</h3>
+                <ul className="space-y-3 opacity-70">
+                    {completedTasks.map((item) => (
+                        <li key={item.list_item_id} className="flex items-center justify-between p-3 bg-slate-900/50 rounded-lg border-l-4 border-green-500">
+                            <span className="text-gray-500 line-through flex-grow cursor-pointer" onClick={() => toggleTask(item.list_item_id)}>
+                                {item.text_content}
+                            </span>
+                            <div className="flex items-center space-x-2">
+                                <button
+                                    onClick={() => toggleTask(item.list_item_id)}
+                                    className="text-green-500 hover:text-green-600 transition p-1"
+                                    title="Mark as Pending"
+                                >
+                                    <CheckCircle className="w-6 h-6 fill-current" />
+                                </button>
+                                <button
+                                    onClick={() => removeTask(item.list_item_id)}
+                                    className="text-gray-400 hover:text-red-500 transition p-1"
+                                    title="Delete Task"
+                                >
+                                    <Trash2 className="w-6 h-6" />
+                                </button>
+                            </div>
+                        </li>
+                    ))}
+                </ul>
+            </div>
+        </div>
+    );
+};
+
+const SubjectData = [
+    {
+        name: "Physics",
+        icon: Ruler,
+        color: "text-blue-400",
+        chapters: [
+            {
+                title: "Kinematics: 1D & 2D Motion",
+                description: "Equations for projectile motion and displacement-time graphs.",
+                link: "https://www.youtube.com/watch?v=hY9zZrYuDVk",
+            },
+            {
+                title: "Newton's Laws & Dynamics",
+                description: "Force, momentum, friction, and circular motion.",
+                link: "https://www.youtube.com/watch?v=aPwqkZCBouU",
+            },
+            {
+                title: "Work, Energy, and Power",
+                description: "Conservation of energy and non-conservative forces.",
+                link: "https://www.youtube.com/watch?v=M6R4bWT-eOU",
+            },
+            {
+                title: "Oscillations",
+                description: "Oscillations, springs, pendulums, and wave characteristics.",
+                link: "http://youtube.com/watch?v=bv8qBsHK9bM",
+            },
+            {
+                title: "Electromagnetism",
+                description: "Electric fields, magnetic fields, and Faraday's Law.",
+                link: "https://www.youtube.com/watch?v=_WXExQ4E-po",
+            },
+        ],
+    },
+    {
+        name: "Chemistry",
+        icon: FlaskRound,
+        color: "text-green-400",
+        chapters: [
+            {
+                title: "Atomic Structure & Periodicity",
+                description: "Quantum numbers, electron configurations, and periodic trends.",
+                link: "https://www.youtube.com/watch?v=Eu0jMAJje0A",
+            },
+            {
+                title: "Chemical Bonding & Molecular Structure",
+                description: "VSEPR theory, hybridization, and intermolecular forces.",
+                link: "https://www.youtube.com/watch?v=BBsd2AdKUqw",
+            },
+            {
+                title: "Stoichiometry & Moles",
+                description: "Limiting reactants, percent yield, and concentration calculations.",
+                link: "https://www.youtube.com/watch?v=jWmrcNrJ59E",
+            },
+            {
+                title: "Chemical Equilibrium",
+                description: "Reversible reactions, Le Chatelier's Principle, and reaction quotient.",
+                link: "https://www.youtube.com/watch?v=ZUm2YPGqtAI",
+            },
+            {
+                title: "Ionic Equilibrium",
+                description: "Strong vs. weak acids/bases and buffer solutions.",
+                link: "https://www.youtube.com/watch?v=IF7DGTWCK_c",
+            },
+        ],
+    },
+    {
+        name: "Mathematics",
+        icon: Calculator,
+        color: "text-purple-400",
+        chapters: [
+            {
+                title: "Differential Calculus",
+                description: "Limits, derivatives, and applications (optimization, related rates).",
+                link: "https://www.youtube.com/watch?v=YQ1Ix2FHlm0",
+            },
+            {
+                title: "Integral Calculus",
+                description: "Antiderivatives, definite integrals, and area under the curve.",
+                link: "https://www.youtube.com/watch?v=PPCdmEDq85Y",
+            },
+            {
+                title: "Trigonometry",
+                description: "Identities, laws of sine/cosine, and complex numbers.",
+                link: "https://www.youtube.com/watch?v=Q6YUTgL5MpI",
+            },
+            {
+                title: "Vectors & 3D Geometry",
+                description: "Dot products, cross products, and equation of a plane.",
+                link: "https://www.youtube.com/watch?v=7v2vYv6Pl7g",
+            },
+            {
+                title: "Probability & Statistics",
+                description: "Bayes' Theorem, discrete/continuous distributions, and regression.",
+                link: "https://www.youtube.com/watch?v=WOKchTFXnYo",
+            },
+        ],
+    },
+    {
+        name: "Biology",
+        icon: Dna,
+        color: "text-red-400",
+        chapters: [
+            {
+                title: "Cell Structure and Function",
+                description: "Eukaryotic and prokaryotic organelles and membrane transport.",
+                link: "https://www.youtube.com/watch?v=hJi3S1haN3Y",
+            },
+            {
+                title: "Molecular Basis of Inheritance (Genetics)",
+                description: "DNA structure, replication, transcription, and translation.",
+                link: "https://www.youtube.com/watch?v=0S5jWfsPTQE",
+            },
+            {
+                title: "Ecology and Environment",
+                description: "Ecosystems, biogeochemical cycles, and biodiversity conservation.",
+                link: "https://www.youtube.com/results?search_query=Ecology+and+Environment+biology+neet",
+            },
+            {
+                title: "Human Physiology (Respiration & Circulation)",
+                description: "Gas exchange mechanism and cardiac cycle.",
+                link: "https://www.youtube.com/watch?v=bDhcqW8dYj8",
+            },
+            {
+                title: "Plant Physiology (Photosynthesis)",
+                description: "Light and dark reactions, C3 and C4 pathways.",
+                link: "https://www.youtube.com/watch?v=d6pfq-0CwZc",
+            },
+        ],
+    },
+
+];
+
+const allResources = SubjectData.flatMap(subject =>
+    subject.chapters.map(chapter => ({
+        ...chapter,
+        subjectName: subject.name,
+        subjectIcon: subject.icon,
+        subjectColor: subject.color
+    }))
+);
+
+
+const ResourceScreen = () => {
+    const { theme } = useAuth();
+    const isOnePieceTheme = theme === 'one_piece';
+    const styles = getThemeStyles(theme);
+    const [searchTerm, setSearchTerm] = useState('');
+
+
+    const filteredResources = allResources.filter(resource => {
+        const query = searchTerm.toLowerCase();
+        return (
+            resource.title.toLowerCase().includes(query) ||
+            resource.description.toLowerCase().includes(query) ||
+            resource.subjectName.toLowerCase().includes(query)
+        );
+    });
+
+    const cardAccentColor = isOnePieceTheme ? 'border-yellow-500' : 'border-cyan-500';
+    const headerIconColor = isOnePieceTheme ? 'text-yellow-500' : 'text-cyan-400';
+
+    return (
+        <div className={`p-6 md:p-10 ${styles.bg} rounded-2xl shadow-2xl w-full max-w-4xl mx-auto border-4 ${styles.border} backdrop-blur-md`}>
+            <h1 className={`text-4xl font-extrabold text-white mb-6 border-b-4 ${styles.borderColor} pb-2 flex items-center`}>
+                <BookOpen className={`w-8 h-8 mr-3 ${headerIconColor}`} /> {isOnePieceTheme ? 'Grand Line Maps' : 'Trainer Resources'} 📚
+            </h1>
+            <p className="text-gray-300 mb-6 text-lg">
+                Access curated links and educational material for your toughest subjects.
+            </p>
+
+            <div className="relative mb-10">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+                <input
+                    type="text"
+                    placeholder="Search by subject (e.g., 'Physics') or chapter title..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className={`w-full py-3 pl-10 pr-4 border-2 border-gray-600 rounded-xl focus:outline-none ${styles.inputFocus} transition shadow-md text-white bg-slate-700/80`}
+                />
+            </div>
+
+
+            {filteredResources.length > 0 ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    {filteredResources.map((resource, index) => {
+                        const IconComponent = resource.subjectIcon;
+                        return (
+                            <a
+                                key={index}
+                                href={resource.link}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className={`block bg-slate-800/80 p-6 rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:scale-[1.01] border-l-8 ${cardAccentColor}`}
+                            >
+                                <div className="flex items-start space-x-4">
+                                    <IconComponent className={`w-8 h-8 ${resource.subjectColor} flex-shrink-0 mt-1`} />
+                                    <div>
+                                        <p className="text-sm font-semibold mb-1 uppercase text-gray-400">
+                                            {resource.subjectName}
+                                        </p>
+                                        <h2 className="text-2xl font-bold text-white mb-1">
+                                            {resource.title}
+                                        </h2>
+                                        <p className="text-gray-400 mb-3">
+                                            {resource.description}
+                                        </p>
+                                        <span className={`inline-flex items-center text-sm font-semibold hover:text-red-400 transition ${isOnePieceTheme ? 'text-red-500' : 'text-blue-400'}`}>
+                                            View Chapter <ExternalLink className="w-4 h-4 ml-2" />
+                                        </span>
+                                    </div>
+                                </div>
+                            </a>
+                        );
+                    })}
+                </div>
+            ) : (
+                <div className="text-center p-12 bg-slate-800/80 rounded-2xl shadow-lg border border-slate-700">
+                    <p className="text-2xl font-bold text-gray-300">No educational material found for "{searchTerm}" 😥</p>
+                    <p className="text-gray-400 mt-2">Try searching by subject (e.g., "Math") or a topic!</p>
+                </div>
+            )}
+        </div>
+    );
+};
+
 
 interface MainLayoutProps {
     dashboardData: DashboardData | null;
@@ -1696,9 +2336,12 @@ const MainLayout: React.FC<MainLayoutProps> = ({ dashboardData, loadingDashboard
 
     const navItems = [
         { name: 'Dashboard', screen: 'dashboard', icon: LayoutDashboard },
+        { name: 'Skill Mastery Progress', screen: 'progress', icon: TrendingUp },
         { name: 'Leaderboard', screen: 'leaderboard', icon: Trophy },
         { name: 'Start Quiz Battle', screen: 'quiz_select', icon: Zap },
         { name: 'Study Report', screen: 'feedback', icon: MessageSquare },
+        { name: 'Resources', screen: 'resources', icon: BookOpen },
+        { name: 'To-Do List', screen: 'todo_list', icon: List },
     ];
 
     let screenContent;
@@ -1751,6 +2394,16 @@ const MainLayout: React.FC<MainLayoutProps> = ({ dashboardData, loadingDashboard
                 />
             );
             break;
+        case 'resources':
+            screenContent = <ResourceScreen />;
+            break;
+        case 'todo_list':
+            screenContent = <TodoListScreen />;
+            break;
+        case 'progress': 
+        screenContent = <ProgressScreen dashboardData={dashboardData} />;
+        break;
+            
         default:
             screenContent = <p className="text-gray-900">Select a navigation link.</p>;
     }
@@ -1780,10 +2433,10 @@ const MainLayout: React.FC<MainLayoutProps> = ({ dashboardData, loadingDashboard
                             key={item.name}
                             onClick={() => navigate(item.screen as LoggedInScreen)}
                             className={`flex items-center w-full px-5 py-3 rounded-lg font-bold transition-all duration-300
-                                         ${currentScreen === item.screen || (item.screen === 'quiz_select' && currentScreen === 'quiz_battle')
-                                            ? 'bg-blue-600 text-white shadow-xl shadow-blue-500/30 transform scale-[1.02] border border-cyan-500'
-                                            : 'text-gray-300 hover:bg-slate-700 hover:text-cyan-400'
-                                        }`}
+                                            ${currentScreen === item.screen || (item.screen === 'quiz_select' && currentScreen === 'quiz_battle')
+                                    ? 'bg-blue-600 text-white shadow-xl shadow-blue-500/30 transform scale-[1.02] border border-cyan-500'
+                                    : 'text-gray-300 hover:bg-slate-700 hover:text-cyan-400'
+                                }`}
                         >
                             <item.icon className="w-6 h-6 mr-3" />
                             {item.name}
@@ -1825,14 +2478,9 @@ const MainLayout: React.FC<MainLayoutProps> = ({ dashboardData, loadingDashboard
     );
 };
 
-interface OnePieceMainLayoutProps {
-    dashboardData: DashboardData | null;
-    loadingDashboard: boolean;
-    fetchDashboardData: () => void;
-    logout: () => void;
-}
+// --- ONE PIECE LAYOUT (Adapted) ---
 
-const OnePieceMainLayout: React.FC<OnePieceMainLayoutProps> = ({ dashboardData, loadingDashboard, fetchDashboardData, logout }) => {
+const OnePieceMainLayout: React.FC<MainLayoutProps> = ({ dashboardData, loadingDashboard, fetchDashboardData, logout }) => {
     const [currentScreen, setCurrentScreen] = useState<LoggedInScreen>('dashboard');
     const [currentSubject, setCurrentSubject] = useState<string>('');
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -1910,9 +2558,12 @@ const OnePieceMainLayout: React.FC<OnePieceMainLayoutProps> = ({ dashboardData, 
 
     const navItems = [
         { name: 'Logbook (Dashboard)', screen: 'dashboard', icon: LayoutDashboard },
+        { name: 'Nakama Skill Mastery', screen: 'progress', icon: TrendingUp },
         { name: 'Grand Line Rankings', screen: 'leaderboard', icon: Trophy },
         { name: 'Bounty Quests (Quiz)', screen: 'quiz_select', icon: Zap },
         { name: 'Shanks\' Report', screen: 'feedback', icon: MessageSquare },
+        { name: 'Grand Line Maps', screen: 'resources', icon: BookOpen },
+        { name: 'Mission Log', screen: 'todo_list', icon: List },
     ];
 
     let screenContent;
@@ -2020,6 +2671,15 @@ const OnePieceMainLayout: React.FC<OnePieceMainLayoutProps> = ({ dashboardData, 
                 />
             );
             break;
+        case 'resources':
+            screenContent = <ResourceScreen />;
+            break;
+        case 'todo_list':
+            screenContent = <TodoListScreen />;
+            break;
+            case 'progress':
+            screenContent = <ProgressScreen dashboardData={dashboardData} />;
+            break;
         default:
             screenContent = <p className="text-gray-900">Choose your destination!</p>;
     }
@@ -2049,10 +2709,10 @@ const OnePieceMainLayout: React.FC<OnePieceMainLayoutProps> = ({ dashboardData, 
                             key={item.name}
                             onClick={() => navigate(item.screen as LoggedInScreen)}
                             className={`flex items-center w-full px-5 py-3 rounded-lg font-bold transition-all duration-300
-                                         ${currentScreen === item.screen || (item.screen === 'quiz_select' && currentScreen === 'quiz_battle')
-                                            ? 'bg-red-700 text-white shadow-xl shadow-red-500/30 transform scale-[1.02] border border-yellow-500'
-                                            : 'text-gray-300 hover:bg-red-900/40 hover:text-yellow-500'
-                                        }`}
+                                            ${currentScreen === item.screen || (item.screen === 'quiz_select' && currentScreen === 'quiz_battle')
+                                    ? 'bg-red-700 text-white shadow-xl shadow-red-500/30 transform scale-[1.02] border border-yellow-500'
+                                    : 'text-gray-300 hover:bg-red-900/40 hover:text-yellow-500'
+                                }`}
                         >
                             <item.icon className="w-6 h-6 mr-3" />
                             {item.name}
@@ -2095,6 +2755,7 @@ const OnePieceMainLayout: React.FC<OnePieceMainLayoutProps> = ({ dashboardData, 
     );
 };
 
+
 const App: React.FC = () => {
     const { isLoggedIn, login, logout, token, theme } = useAuth();
 
@@ -2131,7 +2792,8 @@ const App: React.FC = () => {
 
                     if (response.ok && !data.error) {
                         if (data && data.pokemon_panel) {
-                            data.pokemon_panel.image_url = getPokemonImageUrl(data.pokemon_panel.name);
+                            // Ensure the client-side theme function for images runs
+                            data.pokemon_panel.image_url = getPokemonImageUrl(data.pokemon_panel.name); 
                         }
                         break;
                     } else if (i === maxRetries - 1) {
@@ -2222,3 +2884,33 @@ const App: React.FC = () => {
 };
 
 export default App;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

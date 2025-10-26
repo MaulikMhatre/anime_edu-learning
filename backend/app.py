@@ -1,4 +1,5 @@
 
+
 import sqlite3
 import json
 import time
@@ -9,16 +10,14 @@ from flask_cors import CORS
 from werkzeug.security import generate_password_hash, check_password_hash
 import requests
 
-
 DATABASE = 'pokequest.db'
-API_KEY = "AIzaSyBgJZJh6k2XF6wOflzbRSU5jr5TAzeH5ig" 
+
+API_KEY = "AIzaSyBgJZJh6k2XF6wOflzbRSU5jr5TAzeH5ig"  
 MODEL_NAME = "gemini-2.5-flash" 
 API_URL = f"https://generativelanguage.googleapis.com/v1beta/models/{MODEL_NAME}:generateContent?key={API_KEY}"
 
-
 app = Flask(__name__)
 CORS(app)
-
 
 
 def get_db():
@@ -41,15 +40,13 @@ def init_db():
     with app.app_context():
         db = get_db()
         cursor = db.cursor()
-
-        # 1. Users Table 
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS users (
                 user_id TEXT PRIMARY KEY,
                 username TEXT UNIQUE NOT NULL,
                 password_hash TEXT NOT NULL,
                 auth_token TEXT UNIQUE,      -- Token for API requests
-                pokemon_name TEXT DEFAULT 'Pikachu',  
+                pokemon_name TEXT DEFAULT 'Pikachu',
                 xp INTEGER DEFAULT 0,
                 level INTEGER DEFAULT 1,
                 badges INTEGER DEFAULT 0,
@@ -57,11 +54,12 @@ def init_db():
                 last_quiz_weak_topics TEXT DEFAULT '[]'
             );
         """)
+
         try:
             db.execute("SELECT pokemon_name FROM users LIMIT 1")
         except sqlite3.OperationalError:
-            print("Adding 'pokemon_name' column to existing users table.")
             db.execute("ALTER TABLE users ADD COLUMN pokemon_name TEXT DEFAULT 'Pikachu'")
+            print("Added 'pokemon_name' column to users table.")
 
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS quizzes (
@@ -75,8 +73,20 @@ def init_db():
                 FOREIGN KEY(user_id) REFERENCES users(user_id)
             );
         """)
-        db.commit()
 
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS subject_progress (
+                user_id TEXT NOT NULL,
+                subject TEXT NOT NULL,
+                total_attempts INTEGER DEFAULT 0,
+                total_correct INTEGER DEFAULT 0,
+                proficiency_score REAL DEFAULT 0.0,  -- Correct answers / Total attempts (0.0 to 1.0)
+                PRIMARY KEY (user_id, subject),
+                FOREIGN KEY(user_id) REFERENCES users(user_id)
+            );
+        """)
+        
+        db.commit()
 
 init_db()
 
@@ -98,12 +108,11 @@ def auth_required(f):
 
         if user is None:
             return jsonify({"error": "Invalid or expired token."}), 401
-        
+
         kwargs['user_id'] = user['user_id']
         return f(*args, **kwargs)
 
     return decorated
-
 
 
 def gemini_api_call(prompt, system_instruction):
@@ -113,7 +122,6 @@ def gemini_api_call(prompt, system_instruction):
     """
     print(f"--- Calling Gemini for Quiz Generation using {MODEL_NAME} ---")
     
-
     response_schema = {
         "type": "OBJECT",
         "properties": {
@@ -144,7 +152,6 @@ def gemini_api_call(prompt, system_instruction):
         }
     }
 
-
     MAX_RETRIES = 5
     for i in range(MAX_RETRIES):
         try:
@@ -163,18 +170,16 @@ def gemini_api_call(prompt, system_instruction):
                 print(f"Gemini API Response Structure Error: {e}. Full result: {result}")
                 return {"error": "Gemini API returned an unparsable structure. Check console for details."}
 
-
             try:
                 return json.loads(json_text)
             except json.JSONDecodeError as e:
                 print(f"Gemini JSON Decode Error: {e}. Raw text was: {json_text}")
                 return {"error": "Gemini generated non-JSON or invalid JSON output."}
 
-
         except requests.exceptions.HTTPError as e:
             error_details = response.text
             print(f"Gemini API HTTP Error: {response.status_code}. Details: {error_details}")
-            
+
             if response.status_code in [429, 500, 503] and i < MAX_RETRIES - 1:
                 delay = 2 ** i
                 print(f"Retrying in {delay} seconds...")
@@ -188,7 +193,6 @@ def gemini_api_call(prompt, system_instruction):
 
     return {"error": "Gemini API failed after multiple retries."}
 
-
 def calculate_new_xp(current_xp, correct_answers):
     """Calculates new XP and checks for level up/evolution."""
     XP_PER_CORRECT_ANSWER = 30
@@ -197,9 +201,10 @@ def calculate_new_xp(current_xp, correct_answers):
     xp_gained = correct_answers * XP_PER_CORRECT_ANSWER
     new_xp = current_xp + xp_gained
 
+    # Simple linear level calculation
     new_level = 1 + (new_xp // XP_REQUIRED_PER_LEVEL)
     
-
+    # Badges unlock based on level
     badges_unlocked = new_level - 1 
 
     return new_xp, new_level, badges_unlocked
@@ -208,12 +213,13 @@ def get_pokemon_status(name, level):
     """
     Determines the visual appearance/evolution stage of the Pokémon based on the trainer's level.
     """
-
-    if level >= 5:
+    if level >= 15:
+        stage = "Mega Evolution Achieved"
+        image_url = f"https://placehold.co/200x200/4c7cff/white?text={name}+Evo_MAX"
+    elif level >= 10:
         stage = "Final Evolution"
-
         image_url = f"https://placehold.co/200x200/4c7cff/white?text={name}+Evo3"
-    elif level >= 3:
+    elif level >= 5:
         stage = "Middle Evolution"
         image_url = f"https://placehold.co/200x200/ff9933/white?text={name}+Evo2"
     else:
@@ -234,7 +240,7 @@ def register():
     pokemon_name = data.get('pokemon_name') 
 
     if not all([username, password, pokemon_name]):
-        return jsonify({"error": "Missing username, password, or pokemon_name"}), 400
+        return jsonify({"error": "Missing username, password, or partner selection"}), 400
 
     db = get_db()
     try:
@@ -272,7 +278,7 @@ def login():
     user = cursor.fetchone()
 
     if not user:
-            return jsonify({"error": "Invalid username or password."}), 401
+        return jsonify({"error": "Invalid username or password."}), 401
     
     if check_password_hash(user['password_hash'], password):
         auth_token = secrets.token_urlsafe(32)
@@ -281,7 +287,8 @@ def login():
             (auth_token, user['user_id'])
         )
         db.commit()
-        theme_to_return = "pokemon_kalos" if user['pokemon_name'] in ['Pikachu', 'Bulbasaur', 'Charmander', 'Squirtle'] else "one_piece" 
+        pokemon_starters = ['Pikachu', 'Bulbasaur', 'Charmander', 'Squirtle']
+        theme_to_return = "pokemon_kalos" if user['pokemon_name'] in pokemon_starters else "one_piece" 
         
         return jsonify({
             "message": "Login successful",
@@ -297,7 +304,7 @@ def login():
 @app.route('/api/dashboard', methods=['GET'])
 @auth_required
 def get_dashboard(user_id):
-    """Fetches user data using the token and the user_id passed by the decorator."""
+    """Fetches user data, including XP/level stats and subject progress."""
     db = get_db()
     cursor = db.execute(
         "SELECT user_id, username, pokemon_name, xp, level, badges, streak, last_quiz_weak_topics FROM users WHERE user_id = ?",
@@ -311,6 +318,12 @@ def get_dashboard(user_id):
         
         pokemon_status = get_pokemon_status(user_dict['pokemon_name'], user_dict['level'])
 
+        progress_cursor = db.execute(
+            "SELECT subject, total_attempts, total_correct, proficiency_score FROM subject_progress WHERE user_id = ?",
+            (user_id,)
+        )
+        subject_progress_list = [dict(row) for row in progress_cursor.fetchall()]
+
         return jsonify({
             "trainer_card": {
                 "user_id": user_dict['user_id'],
@@ -321,6 +334,7 @@ def get_dashboard(user_id):
             },
             "pokemon_panel": {
                 "name": user_dict['pokemon_name'],
+                # Current XP towards next level / total XP required for next level
                 "xp_stat": f"{user_dict['xp'] % xp_required}/{xp_required}", 
                 "total_xp": user_dict['xp'],
                 "evolution_status": pokemon_status['evolution_status'], 
@@ -329,7 +343,8 @@ def get_dashboard(user_id):
             "achievements": {
                 "badges": user_dict['badges']
             },
-            "last_weak_topics": json.loads(user_dict['last_quiz_weak_topics'])
+            "last_weak_topics": json.loads(user_dict['last_quiz_weak_topics']),
+            "subject_progress": subject_progress_list # NEW
         }), 200
     
     return jsonify({"error": "User data not found."}), 404
@@ -339,8 +354,7 @@ def get_dashboard(user_id):
 @auth_required
 def generate_quiz(user_id):
     """
-    Retrieves user weak topics, constructs the Gemini prompt, 
-    calls the API, and returns the quiz.
+    Retrieves user weak topics and level to construct a personalized Gemini quiz prompt.
     """
     data = request.json
     subject = data.get('subject') 
@@ -363,6 +377,7 @@ def generate_quiz(user_id):
     difficulty = "Intermediate (High School Level)" if current_level <= 3 else "Advanced (College Level)"
     
     weak_topics_str = ", ".join(weak_topics) if weak_topics else "General foundational concepts" 
+    
     system_instruction = "You are an accurate and reliable PokeQuest Quiz Master. All generated questions must be factually correct, academically relevant, and strictly adhere to all safety guidelines. Your response must be a single, valid JSON object."
 
     prompt = f"""
@@ -387,7 +402,7 @@ def generate_quiz(user_id):
 @app.route('/api/submit_quiz', methods=['POST'])
 @auth_required
 def submit_quiz(user_id):
-    """Saves quiz results, updates user XP, level, and weak topics."""
+    """Saves quiz results, updates user XP, level, weak topics, and SUBJECT PROGRESS."""
     data = request.json
     subject = data.get('subject')
     score = data.get('score') 
@@ -405,6 +420,8 @@ def submit_quiz(user_id):
         current_xp = user['xp']
         new_xp, new_level, badges_unlocked = calculate_new_xp(current_xp, score)
         weak_topics_json = json.dumps(new_weak_topics)
+        
+        # 1. Update User Table (XP, Level, Weak Topics)
         db.execute("""
             UPDATE users SET 
                 xp = ?, 
@@ -414,10 +431,24 @@ def submit_quiz(user_id):
             WHERE user_id = ?
         """, (new_xp, new_level, badges_unlocked, weak_topics_json, user_id))
 
+        # 2. Insert Quiz History
         db.execute("""
             INSERT INTO quizzes (user_id, subject, score, total_questions, weak_topics) 
             VALUES (?, ?, ?, ?, ?)
         """, (user_id, subject, score, total_questions, weak_topics_json))
+
+        # 3. Insert or Update Subject Progress Tracker (NEW LOGIC)
+        # Calculates new total attempts, new total correct, and new proficiency score.
+        db.execute("""
+            INSERT INTO subject_progress (user_id, subject, total_attempts, total_correct, proficiency_score)
+            VALUES (?, ?, ?, ?, CAST(? AS REAL) / ?)
+            ON CONFLICT(user_id, subject) DO UPDATE SET
+                total_attempts = total_attempts + ?,
+                total_correct = total_correct + ?,
+                proficiency_score = CAST(total_correct + ? AS REAL) / (total_attempts + ?)
+        """, (user_id, subject, total_questions, score, score, total_questions,
+              total_questions, score, score, total_questions))
+
 
         db.commit()
 
@@ -449,10 +480,11 @@ def get_leaderboard():
 if __name__ == '__main__':
     print(f"Database initialized at: {DATABASE}")
     print("--- API Endpoints ---")
-    print("POST /api/register -> Creates user (Now requires pokemon_name)")
-    print("POST /api/login -> Returns auth_token and pokemon_name/theme")
-    print("GET /api/dashboard -> Requires Bearer token")
+    print("POST /api/register -> Creates user")
+    print("POST /api/login -> Returns auth_token and theme")
+    print("GET /api/dashboard -> Requires Bearer token (NOW includes subject_progress)")
     print("POST /api/generate_quiz -> Requires Bearer token")
-    print("POST /api/submit_quiz -> Requires Bearer token")
+    print("POST /api/submit_quiz -> Requires Bearer token (NOW tracks subject progress)")
     print("GET /api/leaderboard -> Public")
     app.run(debug=True)
+
