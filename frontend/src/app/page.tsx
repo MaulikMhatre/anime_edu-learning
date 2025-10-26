@@ -1,5 +1,8 @@
+<<<<<<< HEAD
 
 
+=======
+>>>>>>> a4b1b9f98b71b58e781273882e47739a5e1961b4
 'use client';
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
@@ -64,13 +67,27 @@ interface LeaderboardEntry {
     pokemon_name: string;
 }
 
+<<<<<<< HEAD
 type LoggedInScreen = 'dashboard' | 'leaderboard' | 'quiz_select' | 'quiz_battle' | 'feedback' | 'resources' | 'todo_list'| 'progress';
+=======
+type LoggedInScreen = 'dashboard' | 'leaderboard' | 'quiz_select' | 'quiz_battle' | 'feedback' | 'resources' | 'todo_list';
+>>>>>>> a4b1b9f98b71b58e781273882e47739a5e1961b4
 type Screen = 'landing' | 'login' | 'main';
 type AppTheme = 'pokemon_kalos' | 'one_piece' | 'default';
 
 
+<<<<<<< HEAD
 const POMODORO_WORK_DURATION = 25 * 60; 
 const POMODORO_BREAK_DURATION = 5 * 60; 
+=======
+const POMODORO_WORK_DURATION = 25 * 60; // 25 mins in seconds
+const POMODORO_BREAK_DURATION = 5 * 60; // 5 mins in seconds
+const formatTime = (totalSeconds: number): string => {
+    const mins = Math.floor(totalSeconds / 60);
+    const secs = totalSeconds % 60;
+    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+};
+>>>>>>> a4b1b9f98b71b58e781273882e47739a5e1961b4
 
 
 const getPokemonImageUrl = (name: string): string => {
@@ -309,7 +326,7 @@ const QuizBattle: React.FC<QuizBattleProps> = ({ subject, onQuizComplete, onExit
 
             for (let i = 0; i < maxRetries; i++) {
                 try {
-                    response = await fetch('http://127.0.0.1:5000/api/generate_quiz', {
+                    response = await fetch('https://anime-edu-learning-1.onrender.com/api/generate_quiz', {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
@@ -413,7 +430,7 @@ const QuizBattle: React.FC<QuizBattleProps> = ({ subject, onQuizComplete, onExit
 
             for (let i = 0; i < maxRetries; i++) {
                 try {
-                    response = await fetch('http://127.0.0.1:5000/api/submit_quiz', {
+                    response = await fetch('https://anime-edu-learning-1.onrender.com/api/submit_quiz', {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
@@ -604,9 +621,7 @@ const Dashboard: React.FC<DashboardProps> = ({ dashboardData, onViewLeaderboard,
     let fatigueBarPercent = 0;
     let fatigueBarColor = 'bg-green-500';
     let fatigueBarText = 'Ready to Train!';
-    let timerMins = Math.floor(pomodoroTimeLeft / 60);
-    let timerSecs = pomodoroTimeLeft % 60;
-    const timerDisplay = `${timerMins.toString().padStart(2, '0')}:${timerSecs.toString().padStart(2, '0')}`;
+    const timerDisplay = formatTime(pomodoroTimeLeft);
 
     if (pomodoroStatus === 'active') {
         const energyLeft = pomodoroTimeLeft;
@@ -758,9 +773,7 @@ const QuizSubjectSelectionScreen: React.FC<QuizSubjectSelectionProps> = ({ onSta
     const isBreakTime = pomodoroStatus === 'breaking';
     const isResting = pomodoroStatus === 'resting';
 
-    const timerMins = Math.floor(pomodoroTimeLeft / 60);
-    const timerSecs = pomodoroTimeLeft % 60;
-    const timeDisplay = `${timerMins.toString().padStart(2, '0')}:${timerSecs.toString().padStart(2, '0')}`;
+const timeDisplay = formatTime(pomodoroTimeLeft);
 
     const { theme } = useAuth();
     const isOnePieceTheme = theme === 'one_piece';
@@ -821,7 +834,7 @@ const QuizSubjectSelectionScreen: React.FC<QuizSubjectSelectionProps> = ({ onSta
                             onClick={() => onStartQuiz(subject)}
                             disabled={isBreakTime || isResting}
                             className={`flex flex-col items-center justify-center p-4 ${themeColors.bg} text-white font-bold rounded-xl shadow-xl shadow-blue-500/20
-                                             ${themeColors.hover} transition duration-300 transform hover:scale-[1.05] text-center text-lg ring-2 ring-cyan-500/50 relative`}
+                                         ${themeColors.hover} transition duration-300 transform hover:scale-[1.05] text-center text-lg ring-2 ring-cyan-500/50 relative`}
                         >
                             <MonitorPlay className={`w-6 h-6 mb-2 ${isOnePieceTheme ? themeColors.primary : 'text-cyan-300'}`} />
                             {subject} {isOnePieceTheme ? 'Sea' : ''}
@@ -1037,7 +1050,7 @@ const FeedbackScreen: React.FC<FeedbackProps> = ({ weakTopics, trainerUsername, 
         }
 
         const synth = window.speechSynthesis;
-        synth.cancel();
+        synth.cancel(); 
 
         if (isSpeaking) {
             setIsSpeaking(false);
@@ -1048,7 +1061,11 @@ const FeedbackScreen: React.FC<FeedbackProps> = ({ weakTopics, trainerUsername, 
 
         const voices = synth.getVoices();
 
+<<<<<<< HEAD
 
+=======
+        //  IMPROVED VOICE SELECTION FOR A NATURAL VOICE (Zira, Samantha, or high-quality Google)
+>>>>>>> a4b1b9f98b71b58e781273882e47739a5e1961b4
         const naturalVoice = voices.find(v => v.name.includes('Zira') && v.lang.startsWith('en-US')) ||
             voices.find(v => v.name.includes('Samantha') && v.lang.startsWith('en-US')) ||
             voices.find(v => v.name.includes('Google US English') && v.name.includes('Female')) ||
@@ -1108,10 +1125,25 @@ const FeedbackScreen: React.FC<FeedbackProps> = ({ weakTopics, trainerUsername, 
             const topicsList = topics.join(' and ');
             let mockResponse;
 
-            const primaryTopic = topics[0];
-            const secondaryTopic = topics[1] || topics[0];
+//             if (isOnePieceTheme) {
+//                 mockResponse = `Captain **${username}**! Your Nakama **${starterName}** struggled with the tides in **${topicsList}**. We must fortify the ship! Here is your three-step plan to conquer the Grand Line: 
+                
+// 1.  **Haki Training:** Focus on retrieving core **${topics[0]}** knowledge from memory under pressure. This sharpens your Observation Haki!
+// 2.  **Navigation Check:** Find a fellow pirate and try to explain the **${topics[1] || topics[0]}** concept to them without charts. If you can navigate it, you know it!
+// 3.  **Feast & Rest:** Don't forget the feast! A well-fed pirate is a powerful pirate. You are closer to the title than you think! Kaaizoku ou ni, ore wa naru! (I will be the King of the Pirates!)`;
+//             } else {
+//                 mockResponse = `Trainer **${username}**! Your partner **${starterName}** encountered some unexpected hurdles in **${topicsList}**. Challenging these weak spots is vital! Here is your three-step plan to achieve mastery: 
+                
+// 1.  **Focused Drill:** Concentrate on retrieving core **${topics[0]}** formulas from memory *before* checking your notes. This strengthens foundational knowledge.
+// 2.  **Socratic Review:** Find a friend or tutor and try to explain the **${topics[1] || topics[0]}** concept to them. If you can teach it, you know it!
+// 3.  **Rest & Reflect:** Don't forget to take a quick break! A rested mind is a focused mind. You are closer to the champion's title than you think! Allez!`;
+//             }
+
+const primaryTopic = topics[0];
+const secondaryTopic = topics[1] || topics[0];
 
 
+<<<<<<< HEAD
             if (isOnePieceTheme) {
                 mockResponse = `**☠️ WANTED: THE GRAND LINE QUEST ☠️**\n\n` +
                     `**CAPTAIN:** **${username}**\n` +
@@ -1137,6 +1169,33 @@ const FeedbackScreen: React.FC<FeedbackProps> = ({ weakTopics, trainerUsername, 
                     `    * Teach the **${secondaryTopic}** concept to a friend. If you can mentor them to victory, your mastery is complete.\n` +
                     `3.  **VICTORY LAP:** You've earned a short break! Mental focus wins the day. You are much closer to the champion's title than you realize! **Allez!** (Go!)`;
             }
+=======
+if (isOnePieceTheme) {
+    mockResponse = `**☠️ WANTED: THE GRAND LINE QUEST ☠️**\n\n` +
+                   `**CAPTAIN:** **${username}**\n` +
+                   `**TARGET (Nakama):** **${starterName}**\n` +
+                   `**FAILURE POINT (Bounty Zone):** **${topicsList}**\n\n` +
+                   `Captain, a minor challenge in this zone is holding us back. Your Nakama needs a tailored plan to defeat this challenge and raise their bounty!\n\n` +
+                   `** QUEST LOG: THREE STEPS TO GOLD **\n\n` +
+                   `1.  **Feast & Rest:**\n` +
+                   `    * **Action:** Execute a full recall of the *core logic* of **${primaryTopic}** without any notes or assistance. This sharpens your senses for the next battle!\n` +
+                   `2.  **SAIL MASTER: Charting the Course!**\n` +
+                   `    * **Action:** Try to explain the **${secondaryTopic}** concept to a crewmate. If you can make them understand it, you've successfully charted the course.\n` +
+                   `3.  **Feast & Rest:** Take a moment for a huge feast! A rested pirate is a powerful one. You are closer to the title than you think! **Kaaizoku ou ni, ore wa naru!** (I will be the King of the Pirates!)`;
+} else {
+    mockResponse = `** TRAINER REPORT: THE CHALLENGE AWAITS **\n\n` +
+                   `**TRAINER:** **${username}**\n` +
+                   `**PARTNER:** **${starterName}**\n` +
+                   `**ARENA FLAWS (Topics):** **${topicsList}**\n\n` +
+                   `Trainer, your partner encountered a challenging opponent in the arena. No weakness is permanent—it's just fuel for the next victory!\n\n` +
+                   `** TRAINING PLAN: THREE STEPS TO MASTERY **\n\n` +
+                   `1.  **Focused Drill: Foundational Strength**\n` +
+                   `    *  Memorizing and instantly recalling the essential formulas/rules for **${primaryTopic}** *before* checking your notes. Speed is key!\n` +
+                   `2.  **Socratic Review: Socratic Sparring**\n` +
+                   `    *  Teach the **${secondaryTopic}** concept to a friend. If you can mentor them to victory, your mastery is complete.\n` +
+                   `3.  **VICTORY LAP:** You've earned a short break! Mental focus wins the day. You are much closer to the champion's title than you realize! **Allez!** (Go!)`;
+}
+>>>>>>> a4b1b9f98b71b58e781273882e47739a5e1961b4
 
 
             setFeedback(mockResponse);
@@ -1214,6 +1273,10 @@ const FeedbackScreen: React.FC<FeedbackProps> = ({ weakTopics, trainerUsername, 
 };
 
 
+<<<<<<< HEAD
+=======
+// Leaderboard Screen 
+>>>>>>> a4b1b9f98b71b58e781273882e47739a5e1961b4
 const LeaderboardScreen: React.FC = () => {
     const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
     const [loading, setLoading] = useState(true);
@@ -1239,7 +1302,7 @@ const LeaderboardScreen: React.FC = () => {
 
             for (let i = 0; i < maxRetries; i++) {
                 try {
-                    response = await fetch('http://127.0.0.1:5000/api/leaderboard');
+                    response = await fetch('https://anime-edu-learning-1.onrender.com/api/leaderboard');
                     data = await response.json();
 
                     if (response.ok) {
@@ -1283,12 +1346,6 @@ const LeaderboardScreen: React.FC = () => {
             <div className="p-10 bg-rose-900/50 border border-rose-500 rounded-xl shadow-2xl w-full max-w-4xl mx-auto text-rose-300">
                 <h3 className="text-xl font-bold text-rose-400 mb-3">Leaderboard Error</h3>
                 <p className="text-rose-300">{error}</p>
-                <button
-                    onClick={() => setLeaderboard(MOCK_LEADERBOARD_DATA)}
-                    className="mt-4 px-4 py-2 bg-blue-500 text-white font-bold rounded-lg hover:bg-blue-600 transition shadow-md"
-                >
-                    Show Mock Data
-                </button>
             </div>
         );
     }
@@ -1380,7 +1437,7 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess }) => {
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
     const [themeName, setThemeName] = useState<AppTheme>('pokemon_kalos');
-    const [pokemonName, setPokemonName] = useState('Pikachu');
+    const [pokemonName, setPokemonName] = useState('Pikachu'); 
     const [isRegisterMode, setIsRegisterMode] = useState(false);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
@@ -1414,7 +1471,7 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess }) => {
 
             for (let i = 0; i < maxRetries; i++) {
                 try {
-                    response = await fetch(`http://127.0.0.1:5000/api/${endpoint}`, {
+                    response = await fetch(`https://anime-edu-learning-1.onrender.com/api/${endpoint}`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify(body),
@@ -1505,12 +1562,12 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess }) => {
                         onChange={(e) => {
                             setThemeName(e.target.value as AppTheme);
                             if (isRegisterMode && e.target.value !== 'pokemon_kalos') {
-                                setPokemonName('Turtwig');
+                                setPokemonName('Turtwig'); 
                             } else if (isRegisterMode && e.target.value === 'pokemon_kalos') {
                                 setPokemonName('Pikachu');
                             }
                         }}
-                        disabled={isRegisterMode && themeName === 'one_piece'}
+                        disabled={isRegisterMode && themeName === 'one_piece'} 
                         className="w-full h-14 p-3 border-none bg-[#151C20] text-white rounded-xl focus:ring-2 focus:ring-[#00FFD1] shadow-inner shadow-gray-700/50"
                     >
                         <option value="pokemon_kalos">Pokémon (Kalos Quest)</option>
@@ -1664,8 +1721,8 @@ const FeatureRow: React.FC = () => {
     const features = [
         {
             name: "Pikachu",
-            image: "/images/pikachu_starter.png",
-            color: "bg-yellow-500",
+            image: "/images/pikachu_starter.png", 
+            color: "bg-yellow-500", 
             description: "The iconic \"Electric Pokémon.\" Choosing Pikachu channels boundless energy and lightning-fast critical thinking. It is the perfect partner for trainers seeking electric efficiency and impactful, dynamic solutions."
         },
         {
@@ -1810,6 +1867,7 @@ const notes_and_lists = {
         await new Promise(resolve => setTimeout(resolve, 500));
         if (search_term === 'My Grand Line Study List') {
              return {
+<<<<<<< HEAD
                  notes_and_lists_items: [
                      {
                          list_content: {
@@ -1822,6 +1880,20 @@ const notes_and_lists = {
                      }
                  ]
              };
+=======
+                notes_and_lists_items: [
+                    {
+                        list_content: {
+                            list_items: [
+                                { text_content: "Review Grand Line Map (Kinematics)", checked: false, list_item_id: "1665488100001" },
+                                { text_content: "Practice Haki (Math Integrals)", checked: false, list_item_id: "1665488100002" },
+                                { text_content: "Raid a Marine Base (Ecology)", checked: true, list_item_id: "1665488100003" },
+                            ]
+                        }
+                    }
+                ]
+            };
+>>>>>>> a4b1b9f98b71b58e781273882e47739a5e1961b4
         }
         if (search_term === 'My Pokémon Study List') {
             return {
@@ -1847,7 +1919,10 @@ const notes_and_lists = {
 };
 
 
+<<<<<<< HEAD
 // --- TO-DO LIST SCREEN ---
+=======
+>>>>>>> a4b1b9f98b71b58e781273882e47739a5e1961b4
 const TodoListScreen = () => {
     const { theme } = useAuth();
     const isOnePieceTheme = theme === 'one_piece';
@@ -1863,7 +1938,11 @@ const TodoListScreen = () => {
     const [task, setTask] = useState('');
     const [listName, setListName] = useState(initialListName);
     const [isLoading, setIsLoading] = useState(false);
+<<<<<<< HEAD
     const [currentList, setCurrentList] = useState<ListItem[] | null>(null);
+=======
+    const [currentList, setCurrentList] = useState<ListItem[] | null>(null); 
+>>>>>>> a4b1b9f98b71b58e781273882e47739a5e1961b4
     const [message, setMessage] = useState('');
 
 
@@ -1878,11 +1957,19 @@ const TodoListScreen = () => {
                 return;
             }
 
+<<<<<<< HEAD
             await notes_and_lists.create_list({
                 list_name: initialListName,
                 elements_to_add: isOnePieceTheme ? ["Review Grand Line Map (Kinematics)", "Practice Haki (Math Integrals)"] : ["Review Physics Kinematics", "Practice Math Integrals"]
             });
             setCurrentList(isOnePieceTheme ?
+=======
+            await notes_and_lists.create_list({ 
+                list_name: initialListName, 
+                elements_to_add: isOnePieceTheme ? ["Review Grand Line Map (Kinematics)", "Practice Haki (Math Integrals)"] : ["Review Physics Kinematics", "Practice Math Integrals"] 
+            });
+            setCurrentList(isOnePieceTheme ? 
+>>>>>>> a4b1b9f98b71b58e781273882e47739a5e1961b4
                 [{ text_content: "Review Grand Line Map (Kinematics)", checked: false, list_item_id: "init1" }, { text_content: "Practice Haki (Math Integrals)", checked: false, list_item_id: "init2" }] :
                 [{ text_content: "Review Physics Kinematics", checked: false, list_item_id: "init1" }, { text_content: "Practice Math Integrals", checked: false, list_item_id: "init2" }]
             );
@@ -1898,7 +1985,11 @@ const TodoListScreen = () => {
     }, [initialListName, isOnePieceTheme]);
 
     const addTask = async () => {
+<<<<<<< HEAD
         if (!task.trim() || isLoading) return;
+=======
+        if (!task.trim() || isLoading) return; 
+>>>>>>> a4b1b9f98b71b58e781273882e47739a5e1961b4
         setIsLoading(true);
         setMessage('');
 
@@ -2027,7 +2118,10 @@ const TodoListScreen = () => {
         </div>
     );
 };
+<<<<<<< HEAD
 
+=======
+>>>>>>> a4b1b9f98b71b58e781273882e47739a5e1961b4
 const SubjectData = [
     {
         name: "Physics",
@@ -2213,7 +2307,11 @@ const ResourceScreen = () => {
             {filteredResources.length > 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                     {filteredResources.map((resource, index) => {
+<<<<<<< HEAD
                         const IconComponent = resource.subjectIcon;
+=======
+                        const IconComponent = resource.subjectIcon; 
+>>>>>>> a4b1b9f98b71b58e781273882e47739a5e1961b4
                         return (
                             <a
                                 key={index}
@@ -2252,7 +2350,10 @@ const ResourceScreen = () => {
         </div>
     );
 };
+<<<<<<< HEAD
 
+=======
+>>>>>>> a4b1b9f98b71b58e781273882e47739a5e1961b4
 
 interface MainLayoutProps {
     dashboardData: DashboardData | null;
@@ -2340,8 +2441,13 @@ const MainLayout: React.FC<MainLayoutProps> = ({ dashboardData, loadingDashboard
         { name: 'Leaderboard', screen: 'leaderboard', icon: Trophy },
         { name: 'Start Quiz Battle', screen: 'quiz_select', icon: Zap },
         { name: 'Study Report', screen: 'feedback', icon: MessageSquare },
+<<<<<<< HEAD
         { name: 'Resources', screen: 'resources', icon: BookOpen },
         { name: 'To-Do List', screen: 'todo_list', icon: List },
+=======
+        { name: 'Resources', screen: 'resources', icon: BookOpen }, 
+        { name: 'To-Do List', screen: 'todo_list', icon: List },    
+>>>>>>> a4b1b9f98b71b58e781273882e47739a5e1961b4
     ];
 
     let screenContent;
@@ -2394,6 +2500,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({ dashboardData, loadingDashboard
                 />
             );
             break;
+<<<<<<< HEAD
         case 'resources':
             screenContent = <ResourceScreen />;
             break;
@@ -2404,6 +2511,14 @@ const MainLayout: React.FC<MainLayoutProps> = ({ dashboardData, loadingDashboard
         screenContent = <ProgressScreen dashboardData={dashboardData} />;
         break;
             
+=======
+        case 'resources': 
+            screenContent = <ResourceScreen />;
+            break;
+        case 'todo_list': 
+            screenContent = <TodoListScreen />;
+            break;
+>>>>>>> a4b1b9f98b71b58e781273882e47739a5e1961b4
         default:
             screenContent = <p className="text-gray-900">Select a navigation link.</p>;
     }
@@ -2433,10 +2548,17 @@ const MainLayout: React.FC<MainLayoutProps> = ({ dashboardData, loadingDashboard
                             key={item.name}
                             onClick={() => navigate(item.screen as LoggedInScreen)}
                             className={`flex items-center w-full px-5 py-3 rounded-lg font-bold transition-all duration-300
+<<<<<<< HEAD
                                             ${currentScreen === item.screen || (item.screen === 'quiz_select' && currentScreen === 'quiz_battle')
                                     ? 'bg-blue-600 text-white shadow-xl shadow-blue-500/30 transform scale-[1.02] border border-cyan-500'
                                     : 'text-gray-300 hover:bg-slate-700 hover:text-cyan-400'
                                 }`}
+=======
+                                        ${currentScreen === item.screen || (item.screen === 'quiz_select' && currentScreen === 'quiz_battle')
+                                            ? 'bg-blue-600 text-white shadow-xl shadow-blue-500/30 transform scale-[1.02] border border-cyan-500'
+                                            : 'text-gray-300 hover:bg-slate-700 hover:text-cyan-400'
+                                        }`}
+>>>>>>> a4b1b9f98b71b58e781273882e47739a5e1961b4
                         >
                             <item.icon className="w-6 h-6 mr-3" />
                             {item.name}
@@ -2562,8 +2684,13 @@ const OnePieceMainLayout: React.FC<MainLayoutProps> = ({ dashboardData, loadingD
         { name: 'Grand Line Rankings', screen: 'leaderboard', icon: Trophy },
         { name: 'Bounty Quests (Quiz)', screen: 'quiz_select', icon: Zap },
         { name: 'Shanks\' Report', screen: 'feedback', icon: MessageSquare },
+<<<<<<< HEAD
         { name: 'Grand Line Maps', screen: 'resources', icon: BookOpen },
         { name: 'Mission Log', screen: 'todo_list', icon: List },
+=======
+        { name: 'Grand Line Maps', screen: 'resources', icon: BookOpen }, 
+        { name: 'Mission Log', screen: 'todo_list', icon: List },        
+>>>>>>> a4b1b9f98b71b58e781273882e47739a5e1961b4
     ];
 
     let screenContent;
@@ -2655,7 +2782,7 @@ const OnePieceMainLayout: React.FC<MainLayoutProps> = ({ dashboardData, loadingD
                     <h2 className="text-3xl font-black text-yellow-500 mb-4">Grand Line Bounty Quest: Battle Engaged</h2>
                     <p className="text-lg text-white mt-2 mb-6">You are fighting for **{currentSubject}** knowledge! (Note: The Quiz UI below uses the Pokémon theme.)</p>
                     <QuizBattle
-                        subject={currentSubject || 'Physics'}
+                        subject={currentSubject || 'Physics'} 
                         onQuizComplete={handleQuizComplete}
                         onExit={handleExitQuiz}
                     />
@@ -2671,15 +2798,22 @@ const OnePieceMainLayout: React.FC<MainLayoutProps> = ({ dashboardData, loadingD
                 />
             );
             break;
+<<<<<<< HEAD
         case 'resources':
+=======
+        case 'resources': 
+>>>>>>> a4b1b9f98b71b58e781273882e47739a5e1961b4
             screenContent = <ResourceScreen />;
             break;
         case 'todo_list':
             screenContent = <TodoListScreen />;
             break;
+<<<<<<< HEAD
             case 'progress':
             screenContent = <ProgressScreen dashboardData={dashboardData} />;
             break;
+=======
+>>>>>>> a4b1b9f98b71b58e781273882e47739a5e1961b4
         default:
             screenContent = <p className="text-gray-900">Choose your destination!</p>;
     }
@@ -2709,10 +2843,17 @@ const OnePieceMainLayout: React.FC<MainLayoutProps> = ({ dashboardData, loadingD
                             key={item.name}
                             onClick={() => navigate(item.screen as LoggedInScreen)}
                             className={`flex items-center w-full px-5 py-3 rounded-lg font-bold transition-all duration-300
+<<<<<<< HEAD
                                             ${currentScreen === item.screen || (item.screen === 'quiz_select' && currentScreen === 'quiz_battle')
                                     ? 'bg-red-700 text-white shadow-xl shadow-red-500/30 transform scale-[1.02] border border-yellow-500'
                                     : 'text-gray-300 hover:bg-red-900/40 hover:text-yellow-500'
                                 }`}
+=======
+                                        ${currentScreen === item.screen || (item.screen === 'quiz_select' && currentScreen === 'quiz_battle')
+                                            ? 'bg-red-700 text-white shadow-xl shadow-red-500/30 transform scale-[1.02] border border-yellow-500'
+                                            : 'text-gray-300 hover:bg-red-900/40 hover:text-yellow-500'
+                                        }`}
+>>>>>>> a4b1b9f98b71b58e781273882e47739a5e1961b4
                         >
                             <item.icon className="w-6 h-6 mr-3" />
                             {item.name}
@@ -2784,7 +2925,7 @@ const App: React.FC = () => {
 
             for (let i = 0; i < maxRetries; i++) {
                 try {
-                    response = await fetch('http://127.0.0.1:5000/api/dashboard', {
+                    response = await fetch('https://anime-edu-learning-1.onrender.com/api/dashboard', {
                         method: 'GET',
                         headers: { 'Authorization': `Bearer ${token}` },
                     });
@@ -2884,6 +3025,7 @@ const App: React.FC = () => {
 };
 
 export default App;
+<<<<<<< HEAD
 
 
 
@@ -2914,3 +3056,5 @@ export default App;
 
 
 
+=======
+>>>>>>> a4b1b9f98b71b58e781273882e47739a5e1961b4
